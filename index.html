@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Exam & Discipleship Portal</title>
+  <title>Exam Portal</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -11,84 +11,42 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
-    .header { background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
-    .header h1 { font-size: 26px; font-weight: 700; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+    .header { background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #4facfe 100%); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+    .header h1 { font-size: 26px; font-weight: 700; }
     .nav { display: flex; gap: 10px; flex-wrap: wrap; }
-    .nav-btn { background: rgba(255,255,255,0.25); border: 2px solid white; color: white; padding: 10px 20px; border-radius: 25px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s ease; }
-    .nav-btn:hover, .nav-btn.active { background: white; color: #f5576c; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-    .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+    .nav-btn { background: rgba(255,255,255,0.25); border: 2px solid white; color: white; padding: 10px 20px; border-radius: 25px; cursor: pointer; font-weight: 600; }
+    .nav-btn:hover, .nav-btn.active { background: white; color: #f5576c; }
     .user-controls { display: flex; align-items: center; gap: 10px; }
-    .content { padding: 24px; max-width: 1400px; margin: 0 auto; width: 100%; }
+    .content { padding: 24px; max-width: 1400px; margin: 0 auto; }
     .view { display: none !important; }
-    .view.active { display: block !important; animation: fadeIn 0.4s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    .auth-warning { background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 24px; text-align: center; }
+    .view.active { display: block !important; }
+    .auth-warning { background: #f5576c; color: white; padding: 20px; border-radius: 12px; margin-bottom: 24px; text-align: center; }
     .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); margin-bottom: 24px; }
-    .card h3 { color: #4a5568; margin-bottom: 20px; font-size: 20px; }
     .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #4a5568; }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 15px; transition: all 0.3s ease; }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
-    .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 28px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 15px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); transition: all 0.3s ease; }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5); }
-    .btn-secondary { background: white; color: #667eea; border: 2px solid #667eea; padding: 12px 28px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; }
-    .btn-secondary:hover { background: #667eea; color: white; transform: translateY(-2px); }
-    .btn-success { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 12px 28px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(67, 233, 123, 0.4); }
-    .btn-success:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(67, 233, 123, 0.5); }
-    .btn-danger { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; padding: 8px 16px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(250, 112, 154, 0.4); }
-    .btn-sm { padding: 8px 16px; font-size: 13px; }
-    .question-card { background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 16px; border: 2px solid #e2e8f0; }
-    .question-card h4 { color: #4a5568; margin-bottom: 12px; }
-    .options-list { list-style: none; }
-    .options-list li { margin: 8px 0; }
-    .options-list label { display: flex; align-items: center; gap: 10px; padding: 10px; background: white; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; }
-    .options-list label:hover { background: #e0e7ff; }
-    .options-list input[type="radio"] { width: 20px; height: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 600; }
+    .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; }
+    .btn-primary { background: #667eea; color: white; padding: 12px 28px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; }
+    .btn-secondary { background: white; color: #667eea; border: 2px solid #667eea; padding: 12px 28px; border-radius: 12px; cursor: pointer; }
+    .btn-success { background: #43e97b; color: white; padding: 12px 28px; border: none; border-radius: 12px; cursor: pointer; }
+    .btn-danger { background: #fa709a; color: white; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; }
     .exam-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
-    .exam-card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); border-top: 5px solid #667eea; transition: transform 0.3s ease; }
-    .exam-card:hover { transform: translateY(-5px); }
-    .exam-card h4 { color: #4a5568; margin-bottom: 10px; }
-    .exam-card p { color: #718096; font-size: 14px; margin: 6px 0; }
-    .exam-card .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin: 4px 4px 4px 0; }
+    .exam-card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin: 4px; }
     .badge-active { background: #d1fae5; color: #065f46; }
     .badge-closed { background: #fee2e2; color: #991b1b; }
-    .badge-assigned { background: #e0e7ff; color: #4338ca; }
-    .result-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; border-radius: 20px; text-align: center; }
-    .result-card h2 { font-size: 48px; margin: 20px 0; }
-    .result-card .score { font-size: 72px; font-weight: 800; }
-    .timer { background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%); color: white; padding: 12px 24px; border-radius: 12px; font-size: 18px; font-weight: 700; display: inline-block; margin-bottom: 20px; }
-    .timer.urgent { animation: pulse 1s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-    .toolbar { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; }
-    .search-input { padding: 10px 16px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 15px; min-width: 250px; flex: 1; }
-    .search-input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
-    .students-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    .timer { background: #f5576c; color: white; padding: 12px 24px; border-radius: 12px; font-weight: 700; }
+    .toolbar { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    .search-input { padding: 10px 16px; border: 2px solid #e2e8f0; border-radius: 12px; flex: 1; }
+    .students-table { width: 100%; border-collapse: collapse; }
     .students-table th, .students-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-    .students-table th { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: 700; position: sticky; top: 0; z-index: 10; }
-    .students-table tr:hover { background: #f8fafc; }
-    .rank-badge { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 12px; }
-    .rank-1 { background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); }
-    .rank-2 { background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%); }
-    .rank-3 { background: linear-gradient(135deg, #b45309 0%, #92400e 100%); }
-    .testimony-card { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); padding: 20px; border-radius: 12px; margin-bottom: 16px; border-left: 5px solid #667eea; }
-    .testimony-card h4 { color: #4a5568; margin-bottom: 8px; }
-    .testimony-card p { color: #718096; font-style: italic; }
-    .testimony-card .meta { color: #64748b; font-size: 13px; margin-top: 8px; }
-    .share-section { background: linear-gradient(135deg, #25d366 0%, #128c7e 100%); color: white; padding: 20px; border-radius: 12px; margin: 20px 0; text-align: center; }
-    .share-section h4 { margin-bottom: 12px; }
-    .share-link { background: white; color: #25d366; padding: 12px; border-radius: 8px; font-family: monospace; word-break: break-all; margin: 12px 0; font-size: 14px; }
-    .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 24px; flex-wrap: wrap; }
-    .pagination button { padding: 10px 16px; border: 2px solid #667eea; background: white; color: #667eea; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; }
-    .pagination button:hover, .pagination button.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; transform: translateY(-2px); }
-    .pagination button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .pagination-info { color: #4a5568; font-weight: 600; margin: 0 16px; }
-    .table-wrapper { max-height: 70vh; overflow-y: auto; border-radius: 12px; }
-    .table-wrapper::-webkit-scrollbar { width: 8px; }
-    .table-wrapper::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-    .table-wrapper::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; }
-    .footer { text-align: center; padding: 24px; background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%); color: #a0aec0; margin-top: auto; border-radius: 20px 20px 0 0; }
-    @media (max-width: 768px) { .header { flex-direction: column; align-items: flex-start; } .nav { width: 100%; overflow-x: auto; } .exam-list { grid-template-columns: 1fr; } .students-table { font-size: 13px; } .toolbar { flex-direction: column; } }
+    .students-table th { background: #667eea; color: white; }
+    .rank-badge { background: #f59e0b; color: white; padding: 4px 12px; border-radius: 20px; font-weight: 700; }
+    .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 24px; }
+    .pagination button { padding: 10px 16px; border: 2px solid #667eea; background: white; border-radius: 8px; cursor: pointer; }
+    .share-section { background: #25d366; color: white; padding: 20px; border-radius: 12px; margin: 20px 0; text-align: center; }
+    .share-link { background: white; color: #25d366; padding: 12px; border-radius: 8px; font-family: monospace; word-break: break-all; }
+    .testimony-card { background: #f5f7fa; padding: 20px; border-radius: 12px; margin-bottom: 16px; border-left: 5px solid #667eea; }
+    .footer { text-align: center; padding: 24px; color: white; margin-top: 40px; }
   </style>
 </head>
 <body>
@@ -105,1071 +63,170 @@
       </nav>
       <div class="user-controls">
         <span id="user-display">🔐 Guest</span>
-        <button id="student-login-btn" class="btn-success" style="padding:8px 16px;" onclick="studentLogin()">👤 Student</button>
-        <button id="teacher-login-btn" class="btn-primary" style="padding:8px 16px;" onclick="teacherLogin()">👨‍🏫 Teacher</button>
+        <button id="student-login-btn" class="btn-success" onclick="studentLogin()">👤 Student</button>
+        <button id="teacher-login-btn" class="btn-primary" onclick="teacherLogin()">👨‍🏫 Teacher</button>
       </div>
     </header>
-
     <main class="content">
       <div id="auth-warning" class="auth-warning" style="display:none;">
         <h3>🔐 Login Required</h3>
         <p>Please login to access exams</p>
-        <div style="margin-top:16px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-          <button class="btn-success" onclick="studentLogin()">👤 Student Login (Quick)</button>
+        <div style="margin-top:16px;display:flex;gap:12px;justify-content:center;">
+          <button class="btn-success" onclick="studentLogin()">👤 Student Login</button>
           <button class="btn-primary" onclick="teacherLogin()">👨‍🏫 Teacher Login</button>
         </div>
       </div>
-
       <section id="exams" class="view">
         <div class="toolbar">
-          <input type="text" id="search-exam" placeholder="🔍 Search exams..." class="search-input" oninput="renderExams()"/>
-          <select id="filter-exam" onchange="renderExams()">
-            <option value="">All My Exams</option>
-            <option value="active">Active</option>
-            <option value="completed">Completed</option>
-          </select>
+          <input type="text" id="search-exam" placeholder="🔍 Search..." class="search-input" oninput="renderExams()"/>
+          <select id="filter-exam" onchange="renderExams()"><option value="">All</option><option value="active">Active</option><option value="completed">Completed</option></select>
         </div>
-        <div id="student-exam-notice" style="background:#fef3c7;color:#92400e;padding:16px;border-radius:12px;margin-bottom:20px;display:none;">
-          📌 <strong>Note:</strong> You can only see exams that have been shared with you via link.
-        </div>
+        <div id="student-exam-notice" style="background:#fef3c7;color:#92400e;padding:16px;border-radius:12px;margin-bottom:20px;display:none;">📌 You can only see exams shared via link.</div>
         <div class="exam-list" id="exam-list"></div>
       </section>
-
       <section id="register" class="view">
         <div class="card">
           <h3>📝 Student Registration</h3>
-          <div id="exam-access-info" style="background:#e0e7ff;padding:16px;border-radius:12px;margin-bottom:20px;display:none;">
-            <p><strong>📚 Exam Access:</strong> <span id="assigned-exam-name"></span></p>
-            <p style="font-size:13px;color:#64748b;margin-top:8px;">After registration, you'll be able to take this exam.</p>
-          </div>
+          <div id="exam-access-info" style="background:#e0e7ff;padding:16px;border-radius:12px;margin-bottom:20px;display:none;"><p><strong>📚 Exam:</strong> <span id="assigned-exam-name"></span></p></div>
           <form id="register-form" onsubmit="registerStudent(event)">
-            <div class="form-group">
-              <label>Full Name *</label>
-              <input type="text" id="reg-name" required placeholder="Enter your full name"/>
-            </div>
-            <div class="form-group">
-              <label>Phone Number *</label>
-              <input type="tel" id="reg-phone" required placeholder="e.g., 0712345678"/>
-            </div>
-            <div class="form-group">
-              <label>Class Number *</label>
-              <input type="text" id="reg-class" required placeholder="e.g., 696"/>
-            </div>
-            <button type="submit" class="btn-primary">✅ Register & Access Exam</button>
+            <div class="form-group"><label>Full Name *</label><input type="text" id="reg-name" required/></div>
+            <div class="form-group"><label>Phone *</label><input type="tel" id="reg-phone" required/></div>
+            <div class="form-group"><label>Class *</label><input type="text" id="reg-class" required/></div>
+            <button type="submit" class="btn-primary">✅ Register</button>
           </form>
         </div>
       </section>
-
       <section id="students" class="view">
         <div class="toolbar">
-          <input type="text" id="search-student" placeholder="🔍 Search students..." class="search-input" oninput="renderStudents()"/>
-          <select id="filter-class" onchange="renderStudents()">
-            <option value="">All Classes</option>
-          </select>
-          <select id="filter-exam-student" onchange="renderStudents()">
-            <option value="">All Exams</option>
-          </select>
+          <input type="text" id="search-student" placeholder="🔍 Search..." class="search-input" oninput="renderStudents()"/>
           <button class="btn-success" onclick="exportStudents()">📥 Export CSV</button>
         </div>
         <div class="card">
-          <h3>👥 Students & Scores (Ranked)</h3>
-          <div class="table-wrapper">
-            <table class="students-table">
-              <thead>
-                <tr>
-                  <th style="width:60px;">Rank</th>
-                  <th>Name</th>
-                  <th>Phone</th>
-                  <th>Class</th>
-                  <th>Exam</th>
-                  <th>Score</th>
-                  <th>Percentage</th>
-                  <th>Date</th>
-                  <th style="width:80px;">Delete</th>
-                </tr>
-              </thead>
-              <tbody id="students-table-body"></tbody>
-            </table>
-          </div>
+          <h3>👥 Students & Scores</h3>
+          <table class="students-table"><thead><tr><th>Rank</th><th>Name</th><th>Phone</th><th>Class</th><th>Exam</th><th>Score</th><th>%</th><th>Delete</th></tr></thead><tbody id="students-table-body"></tbody></table>
           <div class="pagination" id="pagination"></div>
         </div>
       </section>
-
-      <section id="testimonies" class="view">
-        <div class="toolbar">
-          <input type="text" id="search-testimony" placeholder="🔍 Search testimonies..." class="search-input" oninput="renderTestimonies()"/>
-        </div>
-        <div id="testimonies-list"></div>
-      </section>
-
+      <section id="testimonies" class="view"><div id="testimonies-list"></div></section>
       <section id="take-exam" class="view">
         <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-            <h3 id="take-exam-title">Exam Title</h3>
-            <div class="timer" id="exam-timer">⏱️ 60:00</div>
-          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:20px;"><h3 id="take-exam-title">Exam</h3><div class="timer" id="exam-timer">⏱️ 60:00</div></div>
           <div id="exam-instructions-display" style="background:#f8fafc;padding:16px;border-radius:12px;margin-bottom:24px;"></div>
           <form id="take-exam-form" onsubmit="submitExam(event)">
             <div id="exam-questions-container"></div>
-            <div class="form-group" style="margin-top:24px;">
-              <label>💬 Share Your Testimony (Optional)</label>
-              <textarea id="exam-testimony" rows="3" placeholder="What did you learn from this exam? How has it impacted you?"></textarea>
-            </div>
-            <button type="submit" class="btn-primary" style="margin-top:24px;">📤 Submit Exam</button>
+            <div class="form-group" style="margin-top:24px;"><label>💬 Testimony (Optional)</label><textarea id="exam-testimony" rows="3"></textarea></div>
+            <button type="submit" class="btn-primary" style="margin-top:24px;">📤 Submit</button>
           </form>
         </div>
       </section>
-
       <section id="exam-result" class="view">
-        <div class="result-card">
-          <h3>📊 Exam Results</h3>
-          <h2 id="result-exam-title">Exam Title</h2>
-          <div class="score" id="result-score">0%</div>
-          <p id="result-marks">0 / 0</p>
-          <div style="margin-top:20px;">
-            <p id="result-date"></p>
-          </div>
-          <button class="btn-secondary" onclick="showView('exams')" style="margin-top:24px;">📚 Back to Exams</button>
+        <div class="card" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;text-align:center;padding:40px;">
+          <h3>📊 Results</h3><h2 id="result-exam-title" style="font-size:48px;margin:20px 0;"></h2>
+          <div id="result-score" style="font-size:72px;font-weight:800;"></div>
+          <p id="result-marks"></p><p id="result-date"></p>
+          <button class="btn-secondary" onclick="showView('exams')" style="margin-top:24px;">📚 Back</button>
         </div>
       </section>
-
       <section id="create" class="view">
         <div class="card">
-          <h3>➕ Create New Exam</h3>
+          <h3>➕ Create Exam</h3>
           <form id="create-exam-form" onsubmit="createExam(event)">
-            <div class="form-group">
-              <label>Exam Title *</label>
-              <input type="text" id="exam-title" required placeholder="e.g., Discipleship Level 1"/>
-            </div>
-            <div class="form-group">
-              <label>Subject *</label>
-              <input type="text" id="exam-subject" required placeholder="e.g., Discipleship"/>
-            </div>
-            <div class="form-group">
-              <label>Duration (minutes) *</label>
-              <input type="number" id="exam-duration" required min="1" placeholder="e.g., 60"/>
-            </div>
-            <div class="form-group">
-              <label>Total Marks *</label>
-              <input type="number" id="exam-marks" required min="1" placeholder="e.g., 100"/>
-            </div>
-            <div class="form-group">
-              <label>Instructions</label>
-              <textarea id="exam-instructions" rows="3" placeholder="Exam instructions..."></textarea>
-            </div>
+            <div class="form-group"><label>Title *</label><input type="text" id="exam-title" required/></div>
+            <div class="form-group"><label>Subject *</label><input type="text" id="exam-subject" required/></div>
+            <div class="form-group"><label>Duration (min) *</label><input type="number" id="exam-duration" required min="1"/></div>
+            <div class="form-group"><label>Total Marks *</label><input type="number" id="exam-marks" required min="1"/></div>
+            <div class="form-group"><label>Instructions</label><textarea id="exam-instructions" rows="3"></textarea></div>
             <div class="share-section">
-              <h4>📤 Share Exam on WhatsApp</h4>
-              <p>After publishing, share this unique link with students:</p>
+              <h4>📤 Share on WhatsApp</h4>
               <div class="share-link" id="exam-share-link" style="display:none;"></div>
-              <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:12px;">
-                <button type="button" class="btn-success" onclick="copyAndShare()" style="display:none;" id="btn-copy-share">
-                  <i class="fas fa-copy"></i> Copy Link & Open WhatsApp
-                </button>
-              </div>
-              <p style="font-size:13px;margin-top:12px;opacity:0.9;">⚠️ Only students who register via this link can access this exam.</p>
+              <button type="button" class="btn-success" onclick="copyAndShare()" style="display:none;margin-top:12px;" id="btn-copy-share">📋 Copy & Share</button>
             </div>
-            <div class="form-group">
-              <label>Questions *</label>
-              <div id="questions-container"></div>
-              <button type="button" class="btn-secondary btn-sm" onclick="addQuestion()" style="margin-top:12px;">➕ Add Question</button>
-            </div>
-            <button type="submit" class="btn-primary">📤 Publish Exam</button>
+            <div class="form-group"><label>Questions *</label><div id="questions-container"></div><button type="button" class="btn-secondary" onclick="addQuestion()" style="margin-top:12px;">➕ Add Question</button></div>
+            <button type="submit" class="btn-primary">📤 Publish</button>
           </form>
         </div>
       </section>
-
       <section id="teachers" class="view">
         <div class="card">
           <h3>👨‍🏫 Manage Teachers</h3>
           <form onsubmit="addTeacher(event)" style="margin-bottom:24px;">
-            <div class="form-group">
-              <label>Teacher Email *</label>
-              <input type="email" id="teacher-email" required placeholder="teacher@email.com"/>
-            </div>
-            <div class="form-group">
-              <label>Teacher Name *</label>
-              <input type="text" id="teacher-name" required placeholder="Full name"/>
-            </div>
-            <button type="submit" class="btn-primary">➕ Add Teacher</button>
+            <div class="form-group"><label>Email *</label><input type="email" id="teacher-email" required/></div>
+            <div class="form-group"><label>Name *</label><input type="text" id="teacher-name" required/></div>
+            <button type="submit" class="btn-primary">➕ Add</button>
           </form>
           <div id="teachers-list"></div>
         </div>
       </section>
     </main>
-
-    <footer class="footer">
-      <p>© 2026 Exam Portal - Access Controlled System 🎯</p>
-    </footer>
+    <footer class="footer">© 2026 Exam Portal 🎯</footer>
   </div>
-
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCdSvUk6qpC857ZJfaDbniDlOKvWXPYYXY",
-      authDomain: "discipleship-dashboard-4d713.firebaseapp.com",
-      databaseURL: "https://discipleship-dashboard-4d713-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "discipleship-dashboard-4d      databaseURL: "https://discipleship-dashboard-4d713-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "discipleship-dashboard-4d713",
-      storageBucket: "discipleship-dashboard-4d713.firebasestorage.app",
-      messagingSenderId: "27738663604",
-      appId: "1:27738663604:web:bf1898247e0dd5a37805e1"
-    };
-
+    <script>
+    const firebaseConfig = { apiKey: "AIzaSyCdSvUk6qpC857ZJfaDbniDlOKvWXPYYXY", authDomain: "discipleship-dashboard-4d713.firebaseapp.com", databaseURL: "https://discipleship-dashboard-4d713-default-rtdb.europe-west1.firebasedatabase.app", projectId: "discipleship-dashboard-4d713", storageBucket: "discipleship-dashboard-4d713.firebasestorage.app", messagingSenderId: "27738663604", appId: "1:27738663604:web:bf1898247e0dd5a37805e1" };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
     const auth = firebase.auth();
-
-    const app = {
-      currentUser: null,
-      isAdmin: false,
-      isTeacher: false,
-      exams: {},
-      results: {},
-      students: {},
-      testimonies: {},
-      teachers: {},
-      currentExam: null,
-      assignedExamId: null,
-      timer: null,
-      timeRemaining: 0,
-      questionCount: 0,
-      registeredStudent: null,
-      currentPage: 1,
-      recordsPerPage: 20
-    };
-
-    // Check URL for exam access
+    const app = { currentUser: null, isAdmin: false, isTeacher: false, exams: {}, results: {}, students: {}, testimonies: {}, teachers: {}, currentExam: null, assignedExamId: null, timer: null, timeRemaining: 0, questionCount: 0, registeredStudent: null, currentPage: 1, recordsPerPage: 20 };
     const urlParams = new URLSearchParams(window.location.search);
     const examIdFromUrl = urlParams.get('exam');
-    if (examIdFromUrl) {
-      app.assignedExamId = examIdFromUrl;
-    }
+    if (examIdFromUrl) app.assignedExamId = examIdFromUrl;
 
-    // ✅ Authentication State Listener
     auth.onAuthStateChanged(function(user) {
       app.currentUser = user;
-      
       if (user) {
-        // User is logged in (either anonymous or email/password)
-        if (user.isAnonymous) {
-          document.getElementById('user-display').textContent = '👤 Student';
-        } else {
-          document.getElementById('user-display').textContent = '👤 ' + (user.email || 'User');
-        }
-        
-        // Hide login buttons, show logout
+        document.getElementById('user-display').textContent = user.isAnonymous ? '👤 Student' : '👤 ' + (user.email || 'User');
         document.getElementById('student-login-btn').style.display = 'none';
         document.getElementById('teacher-login-btn').style.display = 'none';
-        
-        // Add logout button
         const logoutBtn = document.createElement('button');
         logoutBtn.id = 'logout-btn';
         logoutBtn.className = 'btn-danger';
         logoutBtn.style.padding = '8px 16px';
         logoutBtn.textContent = '🚪 Logout';
-        logoutBtn.onclick = function() {
-          auth.signOut().then(() => {
-            alert('✅ Logged out');
-            app.isAdmin = false;
-            app.isTeacher = false;
-            location.reload();
-          });
-        };
-        
+        logoutBtn.onclick = function() { auth.signOut().then(() => { alert('✅ Logged out'); app.isAdmin = false; app.isTeacher = false; location.reload(); }); };
         const userControls = document.querySelector('.user-controls');
-        if (!document.getElementById('logout-btn')) {
-          userControls.appendChild(logoutBtn);
-        }
-        
+        if (!document.getElementById('logout-btn')) userControls.appendChild(logoutBtn);
         document.getElementById('auth-warning').style.display = 'none';
-        
-        // Check role and load data
-        checkUserRole().then(() => {
-          loadAllData();
-          if (app.assignedExamId && !app.registeredStudent) {
-            loadExamForRegistration();
-            showView('register');
-          }
-        });
+        checkUserRole().then(() => { loadAllData(); if (app.assignedExamId && !app.registeredStudent) { loadExamForRegistration(); showView('register'); } });
       } else {
-        // User is logged out
         document.getElementById('user-display').textContent = '🔐 Guest';
         document.getElementById('student-login-btn').style.display = 'inline-block';
         document.getElementById('teacher-login-btn').style.display = 'inline-block';
-        
-        // Remove logout button if exists
         const logoutBtn = document.getElementById('logout-btn');
         if (logoutBtn) logoutBtn.remove();
-        
         document.getElementById('auth-warning').style.display = 'block';
-        
-        // Reset app state
-        app.isAdmin = false;
-        app.isTeacher = false;
-        app.exams = {};
-        app.results = {};
-        app.students = {};
-        app.testimonies = {};
-        app.teachers = {};
+        app.isAdmin = false; app.isTeacher = false; app.exams = {}; app.results = {}; app.students = {}; app.testimonies = {}; app.teachers = {};
       }
     });
 
-    // ✅ Student Login (Anonymous - One Click)
-    window.studentLogin = function() {
-      console.log('🔵 Student login clicked');
-      auth.signInAnonymously()
-        .then((credential) => {
-          console.log('✅ Anonymous login successful:', credential.user.uid);
-          if (app.assignedExamId) {
-            showView('register');
-          } else {
-            showView('exams');
-          }
-        })
-        .catch((error) => {
-          console.error('❌ Anonymous login error:', error);
-          alert('❌ Error: ' + error.message + '\n\nMake sure Anonymous Authentication is enabled in Firebase Console.');
-        });
-    };
+    window.studentLogin = function() { console.log('🔵 Student login clicked'); auth.signInAnonymously().then((credential) => { console.log('✅ Anonymous login:', credential.user.uid); if (app.assignedExamId) showView('register'); else showView('exams'); }).catch((error) => { console.error('❌ Error:', error); alert('❌ Error: ' + error.message); }); };
+    window.teacherLogin = function() { console.log('🔵 Teacher login clicked'); const email = prompt('Teacher Email:'); if (!email) return; const password = prompt('Password:'); if (!password) return; auth.signInWithEmailAndPassword(email, password).then((credential) => { console.log('✅ Teacher login:', credential.user.uid); alert('✅ Teacher login successful!'); return checkUserRole(); }).then(() => { if (app.assignedExamId && !app.registeredStudent) showView('register'); }).catch(err => { console.error('❌ Error:', err); alert('❌ Teacher login failed: ' + err.message); }); };
 
-    // ✅ Teacher Login (Email/Password)
-    window.teacherLogin = function() {
-      console.log('🔵 Teacher login clicked');
-      const email = prompt('Teacher Email:');
-      if (!email) return;
-      const password = prompt('Password:');
-      if (!password) return;
-      
-      console.log('🔵 Attempting login with:', email);
-      auth.signInWithEmailAndPassword(email, password)
-        .then((credential) => {
-          console.log('✅ Teacher login successful:', credential.user.uid);
-          alert('✅ Teacher login successful!');
-          return checkUserRole();
-        })
-        .then(() => {
-          if (app.assignedExamId && !app.registeredStudent) {
-            showView('register');
-          }
-        })
-        .catch(err => {
-          console.error('❌ Teacher login error:', err);
-          alert('❌ Teacher login failed: ' + err.message);
-        });
-    };
+    function checkUserRole() { return Promise.all([ database.ref('authorized_users/' + app.currentUser.uid).once('value').then(snapshot => { const userData = snapshot.val(); if (userData) { app.isAdmin = userData.role === 'Admin'; app.isTeacher = userData.role === 'Teacher' || userData.role === 'Admin'; } else if (!app.currentUser.isAnonymous && app.currentUser.email) { app.isAdmin = true; app.isTeacher = true; database.ref('authorized_users/' + app.currentUser.uid).set({ email: app.currentUser.email, name: app.currentUser.email.split('@')[0], role: 'Admin', status: 'approved', createdAt: Date.now() }).catch(err => console.error('Error:', err)); } }), database.ref('teachers').orderByChild('email').equalTo(app.currentUser.email).once('value').then(snapshot => { if (snapshot.exists()) app.isTeacher = true; }) ]).then(() => { const isStaff = app.isAdmin || app.isTeacher; console.log('🎯 Role - Admin:', app.isAdmin, 'Teacher:', app.isTeacher); if (app.currentUser.isAnonymous || !isStaff) { document.getElementById('btn-exams').disabled = false; document.getElementById('btn-exams').style.display = 'inline-block'; document.getElementById('btn-register').disabled = false; document.getElementById('btn-register').style.display = 'inline-block'; document.getElementById('btn-students').style.display = 'none'; document.getElementById('btn-testimonies').style.display = 'none'; document.getElementById('btn-create').style.display = 'none'; document.getElementById('btn-teachers').style.display = 'none'; } if (isStaff) { document.getElementById('btn-exams').disabled = false; document.getElementById('btn-exams').style.display = 'inline-block'; document.getElementById('btn-register').disabled = false; document.getElementById('btn-register').style.display = 'inline-block'; document.getElementById('btn-students').disabled = false; document.getElementById('btn-students').style.display = 'inline-block'; document.getElementById('btn-testimonies').disabled = false; document.getElementById('btn-testimonies').style.display = 'inline-block'; document.getElementById('btn-create').disabled = false; document.getElementById('btn-create').style.display = 'inline-block'; document.getElementById('btn-teachers').disabled = !app.isAdmin; document.getElementById('btn-teachers').style.display = app.isAdmin ? 'inline-block' : 'none'; } }); }
 
-    // ✅ Role Checking with UI Updates - CORRECTED FOR YOUR REQUIREMENTS
-    function checkUserRole() {
-      return Promise.all([
-        database.ref('authorized_users/' + app.currentUser.uid).once('value').then(snapshot => {
-          const userData = snapshot.val();
-          if (userData) {
-            app.isAdmin = userData.role === 'Admin';
-            app.isTeacher = userData.role === 'Teacher' || userData.role === 'Admin';
-          } else if (!app.currentUser.isAnonymous) {
-            // First non-anonymous user becomes admin
-            app.isAdmin = true;
-            app.isTeacher = true;
-            database.ref('authorized_users/' + app.currentUser.uid).set({
-              email: app.currentUser.email,
-              name: app.currentUser.email ? app.currentUser.email.split('@')[0] : 'Admin',
-              role: 'Admin',
-              status: 'approved',
-              createdAt: Date.now()
-            }).catch(err => console.error('Error saving admin:', err));
-          }
-        }),
-        database.ref('teachers').orderByChild('email').equalTo(app.currentUser.email).once('value').then(snapshot => {
-          if (snapshot.exists()) {
-            app.isTeacher = true;
-          }
-        })
-      ]).then(() => {
-        const isStaff = app.isAdmin || app.isTeacher;
-        console.log('✅ User Role - Admin:', app.isAdmin, 'Teacher:', app.isTeacher, 'Anonymous:', app.currentUser?.isAnonymous);
-        
-        // ✅ STUDENTS (Anonymous) - ONLY see Exams & Register
-        if (app.currentUser.isAnonymous || !isStaff) {
-          document.getElementById('btn-exams').disabled = false;
-          document.getElementById('btn-exams').style.display = 'inline-block';
-          document.getElementById('btn-register').disabled = false;
-          document.getElementById('btn-register').style.display = 'inline-block';
-          // HIDE all staff features from students
-          document.getElementById('btn-students').style.display = 'none';
-          document.getElementById('btn-testimonies').style.display = 'none';
-          document.getElementById('btn-create').style.display = 'none';
-          document.getElementById('btn-teachers').style.display = 'none';
-          console.log('👤 Student access: Only Exams & Register');
-        }
-        
-        // ✅ STAFF (Admin/Teachers) - See EVERYTHING
-        if (isStaff) {
-          document.getElementById('btn-exams').disabled = false;
-          document.getElementById('btn-exams').style.display = 'inline-block';
-          document.getElementById('btn-register').disabled = false;
-          document.getElementById('btn-register').style.display = 'inline-block';
-          document.getElementById('btn-students').disabled = false;
-          document.getElementById('btn-students').style.display = 'inline-block';
-          document.getElementById('btn-testimonies').disabled = false;
-          document.getElementById('btn-testimonies').style.display = 'inline-block';
-          document.getElementById('btn-create').disabled = false;
-          document.getElementById('btn-create').style.display = 'inline-block';
-          document.getElementById('btn-teachers').disabled = !app.isAdmin;
-          document.getElementById('btn-teachers').style.display = app.isAdmin ? 'inline-block' : 'none';
-          console.log('👨‍🏫 Staff access: ALL features');
-        }
-      });
-    }
+    window.showView = function(viewName) { const isStaff = app.isAdmin || app.isTeacher; const isStudent = app.currentUser?.isAnonymous || !isStaff; console.log('🔵 View:', viewName, 'Student:', isStudent, 'Staff:', isStaff); if (isStudent) { if (viewName === 'create' || viewName === 'students' || viewName === 'teachers') { alert('🔐 Teachers and Admin only'); viewName = 'exams'; } if (viewName === 'testimonies') { alert('📝 Write testimony after completing exam'); viewName = 'exams'; } } if (viewName === 'teachers' && !app.isAdmin) { alert('🔐 Admin only'); viewName = 'exams'; } document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); const targetView = document.getElementById(viewName); if (targetView) targetView.classList.add('active'); const btn = document.getElementById('btn-' + viewName); if (btn) btn.classList.add('active'); if (viewName === 'exams') { renderExams(); const notice = document.getElementById('student-exam-notice'); if (notice) notice.style.display = isStudent ? 'block' : 'none'; } if (viewName === 'students' && isStaff) { app.currentPage = 1; renderStudents(); } if (viewName === 'testimonies' && isStaff) renderTestimonies(); if (viewName === 'teachers' && app.isAdmin) renderTeachers(); if (viewName === 'create' && isStaff) addQuestion(); };
 
-    // ✅ View Switching with Access Control - CORRECTED
-    window.showView = function(viewName) {
-      const isStaff = app.isAdmin || app.isTeacher;
-      const isStudent = app.currentUser?.isAnonymous || !isStaff;
-      console.log('🔵 Switching to view:', viewName, '| Is Student:', isStudent, '| Is Staff:', isStaff);
-      
-      // 🚫 BLOCK STUDENTS from staff-only views
-      if (isStudent) {
-        if (viewName === 'create' || viewName === 'students' || viewName === 'teachers') {
-          alert('🔐 Teachers and Admin only');
-          showView('exams');
-          return;
-        }
-        if (viewName === 'testimonies') {
-          alert('📝 You can write a testimony after completing an exam');
-          showView('exams');
-          return;
-        }
-      }
-      
-      // Block non-admin from teachers management
-      if (viewName === 'teachers' && !app.isAdmin) {
-        alert('🔐 Admin only');
-        showView('exams');
-        return;
-      }
-      
-      // Hide all views
-      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-      // Remove active class from all nav buttons
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      // Show target view
-      const targetView = document.getElementById(viewName);
-      if (targetView) targetView.classList.add('active');
-      // Set active nav button
-      const btnId = 'btn-' + viewName;
-      const btn = document.getElementById(btnId);
-      if (btn) btn.classList.add('active');
-      
-      // Load data for view
-      if (viewName === 'exams') {
-        renderExams();
-        const notice = document.getElementById('student-exam-notice');
-        if (notice) notice.style.display = isStudent ? 'block' : 'none';
-      }
-      if (viewName === 'students') { if (isStaff) { app.currentPage = 1; renderStudents(); } }
-      if (viewName === 'testimonies') { if (isStaff) renderTestimonies(); }
-      if (viewName === 'teachers') { if (app.isAdmin) renderTeachers(); }
-      if (viewName === 'create') { if (isStaff) addQuestion(); }
-    };
-
-    function loadExamForRegistration() {
-      if (!app.assignedExamId) return;
-      database.ref('exams/' + app.assignedExamId).once('value').then(snapshot => {
-        const exam = snapshot.val();
-        if (exam) {
-          document.getElementById('assigned-exam-name').textContent = exam.title;
-          document.getElementById('exam-access-info').style.display = 'block';
-        } else {
-          alert('❌ Invalid exam link');
-          app.assignedExamId = null;
-        }
-      });
-    }
-
-    window.registerStudent = function(e) {
-      e.preventDefault();
-      if (!app.currentUser) { alert('🔐 Please login first'); return; }
-      const name = document.getElementById('reg-name').value.trim();
-      const phone = document.getElementById('reg-phone').value.trim();
-      const classNum = document.getElementById('reg-class').value.trim();
-      const studentData = {
-        name, phone, class: classNum,
-        email: app.currentUser.email || null,
-        userId: app.currentUser.uid,
-        isAnonymous: app.currentUser.isAnonymous,
-        registeredAt: Date.now(),
-        assignedExamId: app.assignedExamId
-      };
-      database.ref('students/' + app.currentUser.uid).set(studentData)
-        .then(() => {
-          app.registeredStudent = studentData;
-          alert('✅ Registration successful! You can now take the exam.');
-          document.getElementById('register-form').reset();
-          showView('exams');
-        })
-        .catch(err => alert('❌ Error: ' + err.message));
-    };
-
-    window.addTeacher = function(e) {
-      e.preventDefault();
-      if (!app.isAdmin) { alert('🔐 Admin only'); return; }
-      const email = document.getElementById('teacher-email').value.trim();
-      const name = document.getElementById('teacher-name').value.trim();
-      const password = 'Teacher' + Date.now();
-      auth.createUserWithEmailAndPassword(email, password)
-        .then(uc => database.ref('teachers/' + uc.user.uid).set({ email, name, addedBy: app.currentUser.email, addedAt: Date.now() }))
-        .then(() => {
-          alert(`✅ Teacher added!\nEmail: ${email}\nTemp Password: ${password}\n\nPlease share credentials.`);
-          e.target.reset();
-          renderTeachers();
-        })
-        .catch(err => alert('❌ Error: ' + err.message));
-    };
-
-    function renderTeachers() {
-      const list = document.getElementById('teachers-list');
-      if (!list) return;
-      database.ref('teachers').once('value').then(snapshot => {
-        const teachers = snapshot.val() || {};
-        if (Object.keys(teachers).length === 0) {
-          list.innerHTML = '<p style="color:#718096;text-align:center;padding:20px;">No teachers yet</p>';
-          return;
-        }
-        list.innerHTML = Object.entries(teachers).map(([uid, t]) => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:#f8fafc;border-radius:8px;margin-bottom:8px;">
-            <div><strong>${t.name}</strong><br><small style="color:#718096;">${t.email}</small></div>
-            <button class="btn-danger btn-sm" onclick="removeTeacher('${uid}')">🗑️ Remove</button>
-          </div>
-        `).join('');
-      });
-    }
-
-    window.removeTeacher = function(uid) {
-      if (!confirm('Remove this teacher?')) return;
-      database.ref('teachers/' + uid).remove()
-        .then(() => { alert('✅ Teacher removed'); renderTeachers(); });
-    };
-
-    function loadAllData() {
-      database.ref('exams').on('value', snapshot => { app.exams = snapshot.val() || {}; renderExams(); });
-      database.ref('results').on('value', snapshot => { app.results = snapshot.val() || {}; renderStudents(); });
-      database.ref('testimonies').on('value', snapshot => { app.testimonies = snapshot.val() || {}; renderTestimonies(); });
-      if (app.currentUser) {
-        database.ref('students/' + app.currentUser.uid).once('value').then(snapshot => {
-          const student = snapshot.val();
-          if (student) app.registeredStudent = student;
-        });
-      }
-    }
-
-    window.addQuestion = function() {
-      app.questionCount++;
-      const container = document.getElementById('questions-container');
-      const questionDiv = document.createElement('div');
-      questionDiv.className = 'question-card';
-      questionDiv.innerHTML = `
-        <h4>Question ${app.questionCount}</h4>
-        <div class="form-group"><label>Question Text *</label><textarea name="q${app.questionCount}_text" rows="2" required placeholder="Enter question..."></textarea></div>
-        <div class="form-group"><label>Option A *</label><input type="text" name="q${app.questionCount}_a" required placeholder="Option A"/></div>
-        <div class="form-group"><label>Option B *</label><input type="text" name="q${app.questionCount}_b" required placeholder="Option B"/></div>
-        <div class="form-group"><label>Option C</label><input type="text" name="q${app.questionCount}_c" placeholder="Option C"/></div>
-        <div class="form-group"><label>Option D</label><input type="text" name="q${app.questionCount}_d" placeholder="Option D"/></div>
-        <div class="form-group"><label>Correct Answer *</label><select name="q${app.questionCount}_correct" required><option value="">Select correct answer</option><option value="a">Option A</option><option value="b">Option B</option><option value="c">Option C</option><option value="d">Option D</option></select></div>
-        <div class="form-group"><label>Marks for this question *</label><input type="number" name="q${app.questionCount}_marks" required min="1" value="1"/></div>
-        <button type="button" class="btn-danger btn-sm" onclick="this.parentElement.remove()">🗑️ Remove</button>
-      `;
-      container.appendChild(questionDiv);
-    };
-
-    window.createExam = function(e) {
-      e.preventDefault();
-      if (!app.currentUser) { alert('🔐 Please login first'); return; }
-      if (!app.isTeacher && !app.isAdmin) { alert('🔐 Teachers only'); return; }
-      const title = document.getElementById('exam-title').value.trim();
-      const subject = document.getElementById('exam-subject').value.trim();
-      const duration = parseInt(document.getElementById('exam-duration').value);
-      const totalMarks = parseInt(document.getElementById('exam-marks').value);
-      const instructions = document.getElementById('exam-instructions').value.trim();
-      const questions = [];
-      let qNum = 1;
-      document.querySelectorAll('#questions-container .question-card').forEach(card => {
-        const qText = card.querySelector(`[name="q${qNum}_text"]`).value.trim();
-        const qA = card.querySelector(`[name="q${qNum}_a"]`).value.trim();
-        const qB = card.querySelector(`[name="q${qNum}_b"]`).value.trim();
-        const qC = card.querySelector(`[name="q${qNum}_c"]`).value.trim();
-        const qD = card.querySelector(`[name="q${qNum}_d"]`).value.trim();
-        const qCorrect = card.querySelector(`[name="q${qNum}_correct"]`).value;
-        const qMarks = parseInt(card.querySelector(`[name="q${qNum}_marks"]`).value);
-        if (qText && qA && qB && qCorrect) {
-          questions.push({ text: qText, options: { a: qA, b: qB, c: qC || '', d: qD || '' }, correct: qCorrect, marks: qMarks });
-        }
-        qNum++;
-      });
-      if (questions.length === 0) { alert('⚠️ Add at least one question'); return; }
-      const exam = { title, subject, duration, totalMarks, instructions, questions, createdBy: app.currentUser.email || 'Anonymous Teacher', createdAt: Date.now(), status: 'active', accessCode: 'exam_' + Date.now() };
-      const examId = exam.accessCode;
-      database.ref('exams/' + examId).set(exam)
-        .then(() => {
-          const baseUrl = window.location.href.split('?')[0];
-          const examLink = `${baseUrl}?exam=${examId}`;
-          document.getElementById('exam-share-link').textContent = examLink;
-          document.getElementById('exam-share-link').style.display = 'block';
-          document.getElementById('btn-copy-share').style.display = 'inline-block';
-          document.getElementById('btn-copy-share').dataset.link = examLink;
-          document.getElementById('btn-copy-share').dataset.title = title;
-          alert('✅ Exam published! Click "Copy Link & Open WhatsApp" to share.');
-          document.getElementById('create-exam-form').reset();
-          document.getElementById('questions-container').innerHTML = '';
-          app.questionCount = 0;
-          addQuestion();
-        })
-        .catch(err => alert('❌ Error: ' + err.message));
-    };
-
-    window.copyAndShare = function() {
-      const btn = document.getElementById('btn-copy-share');
-      const link = btn.dataset.link;
-      navigator.clipboard.writeText(link).then(() => {
-        alert('✅ Link copied!\n\n1. WhatsApp will open now\n2. Select contact/group\n3. Paste the link (long press → Paste)\n4. Send!');
-        setTimeout(() => { window.open('https://wa.me/', '_blank'); }, 1500);
-      }).catch(() => { prompt('Copy this link:', link); });
-    };
-        window.renderExams = function() {
-      const list = document.getElementById('exam-list');
-      if (!list) return;
-      
-      const isStaff = app.isAdmin || app.isTeacher;
-      const isStudent = app.currentUser?.isAnonymous || !isStaff;
-      const searchTerm = (document.getElementById('search-exam').value || '').toLowerCase();
-      const filter = document.getElementById('filter-exam').value;
-      
-      let filtered = Object.entries(app.exams);
-      
-      // STUDENTS: Only see their assigned exam
-      if (isStudent && app.registeredStudent && app.registeredStudent.assignedExamId) {
-        filtered = filtered.filter(([id, exam]) => id === app.registeredStudent.assignedExamId);
-      } 
-      // Unregistered students see nothing
-      else if (isStudent) {
-        filtered = [];
-      }
-      
-      // Apply search/filter
-      filtered = filtered.filter(([id, exam]) => {
-        const matchesSearch = !searchTerm || exam.title.toLowerCase().includes(searchTerm) || exam.subject.toLowerCase().includes(searchTerm);
-        const matchesFilter = !filter || (filter === 'active' && exam.status === 'active') || (filter === 'completed' && exam.status === 'closed');
-        return matchesSearch && matchesFilter;
-      });
-      
-      if (filtered.length === 0) {
-        list.innerHTML = '<p style="text-align:center;color:#718096;padding:40px;">' + 
-          (isStaff ? 'No exams yet. Create one!' : 'No exams assigned to you. Wait for your teacher to share a link.') + 
-          '</p>';
-        return;
-      }
-      
-      // Check if student already completed exam
-      const completedExams = Object.values(app.results)
-        .filter(r => r.userId === app.currentUser.uid || r.studentEmail === app.currentUser.email)
-        .map(r => r.examId);
-      
-      list.innerHTML = filtered.map(([id, exam]) => {
-        const isCompleted = completedExams.includes(id);
-        return `
-          <div class="exam-card">
-            <h4>${exam.title}</h4>
-            <p><strong>Subject:</strong> ${exam.subject}</p>
-            <p><strong>Duration:</strong> ${exam.duration} minutes</p>
-            <p><strong>Total Marks:</strong> ${exam.totalMarks}</p>
-            <p><strong>Questions:</strong> ${exam.questions.length}</p>
-            <span class="badge ${exam.status === 'active' ? 'badge-active' : 'badge-closed'}">${exam.status.toUpperCase()}</span>
-            ${isCompleted ? '<span class="badge badge-assigned">✅ Completed</span>' : ''}
-            ${isStaff ? `<button class="btn-danger btn-sm" onclick="deleteExam('${id}')" style="margin-top:12px;">🗑️ Delete Exam</button>` : ''}
-            ${exam.status === 'active' && !isCompleted ? `<button class="btn-primary btn-sm" onclick="takeExam('${id}')" style="margin-top:12px;width:100%;">📝 Take Exam</button>` : ''}
-            ${isCompleted ? `<button class="btn-secondary btn-sm" onclick="viewMyResult('${id}')" style="margin-top:12px;width:100%;">📊 View Result</button>` : ''}
-          </div>
-        `;
-      }).join('');
-    };
-
-    // ✅ Delete Exam (Staff Only)
-    window.deleteExam = function(examId) {
-      if (!app.isAdmin && !app.isTeacher) {
-        alert('🔐 Teachers and Admin only');
-        return;
-      }
-      if (!confirm('⚠️ Delete this exam?\n\nThis will also delete all student results for this exam.\n\nThis action cannot be undone!')) {
-        return;
-      }
-      database.ref('exams/' + examId).remove()
-        .then(() => {
-          const resultsToDelete = Object.entries(app.results)
-            .filter(([id, result]) => result.examId === examId)
-            .map(([id]) => 'results/' + id);
-          if (resultsToDelete.length > 0) {
-            const updates = {};
-            resultsToDelete.forEach(path => updates[path] = null);
-            return database.ref().update(updates);
-          }
-        })
-        .then(() => {
-          alert('✅ Exam and all results deleted successfully!');
-          renderExams();
-        })
-        .catch(err => {
-          alert('❌ Error deleting exam: ' + err.message);
-        });
-    };
-
-    window.takeExam = function(examId) {
-      if (!app.registeredStudent) {
-        alert('📝 Please register first!');
-        showView('register');
-        return;
-      }
-      if (app.registeredStudent.assignedExamId && app.registeredStudent.assignedExamId !== examId) {
-        alert('🔐 You can only take the exam assigned to you.');
-        return;
-      }
-      const exam = app.exams[examId];
-      if (!exam) return;
-      
-      app.currentExam = { id: examId, ...exam };
-      app.timeRemaining = exam.duration * 60;
-      
-      document.getElementById('take-exam-title').textContent = exam.title;
-      document.getElementById('exam-instructions-display').innerHTML = exam.instructions ? `<p><strong>Instructions:</strong> ${exam.instructions}</p>` : '';
-      
-      const container = document.getElementById('exam-questions-container');
-      container.innerHTML = exam.questions.map((q, i) => `
-        <div class="question-card">
-          <h4>Question ${i + 1} (${q.marks} marks)</h4>
-          <p style="margin-bottom:16px;">${q.text}</p>
-          <ul class="options-list">
-            ${q.options.a ? `<li><label><input type="radio" name="q${i}" value="a"/> ${q.options.a}</label></li>` : ''}
-            ${q.options.b ? `<li><label><input type="radio" name="q${i}" value="b"/> ${q.options.b}</label></li>` : ''}
-            ${q.options.c ? `<li><label><input type="radio" name="q${i}" value="c"/> ${q.options.c}</label></li>` : ''}
-            ${q.options.d ? `<li><label><input type="radio" name="q${i}" value="d"/> ${q.options.d}</label></li>` : ''}
-          </ul>
-        </div>
-      `).join('');
-      
-      showView('take-exam');
-      startTimer();
-    };
-
-    function startTimer() {
-      const timerEl = document.getElementById('exam-timer');
-      app.timer = setInterval(() => {
-        app.timeRemaining--;
-        const minutes = Math.floor(app.timeRemaining / 60);
-        const seconds = app.timeRemaining % 60;
-        timerEl.textContent = `⏱️ ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        if (app.timeRemaining <= 60) timerEl.classList.add('urgent');
-        if (app.timeRemaining <= 0) {
-          clearInterval(app.timer);
-          alert('⏰ Time is up!');
-          submitExam(null, true);
-        }
-      }, 1000);
-    }
-
-    window.submitExam = function(e, autoSubmit = false) {
-      if (e) e.preventDefault();
-      if (!app.currentExam || !app.currentUser || !app.registeredStudent) return;
-      if (!autoSubmit && !confirm('📤 Submit exam?')) return;
-      
-      clearInterval(app.timer);
-      
-      let score = 0;
-      let totalMarks = 0;
-      const answers = {};
-      
-      app.currentExam.questions.forEach((q, i) => {
-        const selected = document.querySelector(`input[name="q${i}"]:checked`);
-        const userAnswer = selected ? selected.value : null;
-        answers[`q${i}`] = userAnswer;
-        totalMarks += q.marks;
-        if (userAnswer === q.correct) score += q.marks;
-      });
-      
-      const percentage = Math.round((score / totalMarks) * 100);
-      const testimony = document.getElementById('exam-testimony').value.trim();
-      
-      const result = {
-        examId: app.currentExam.id,
-        examTitle: app.currentExam.title,
-        studentEmail: app.currentUser.email || null,
-        userId: app.currentUser.uid,
-        isAnonymous: app.currentUser.isAnonymous,
-        studentName: app.registeredStudent.name,
-        studentPhone: app.registeredStudent.phone,
-        studentClass: app.registeredStudent.class,
-        score,
-        totalMarks,
-        percentage,
-        answers,
-        submittedAt: Date.now(),
-        autoSubmitted: autoSubmit
-      };
-      
-      const resultId = 'result_' + app.currentUser.uid + '_' + Date.now();
-      database.ref('results/' + resultId).set(result)
-        .then(() => {
-          if (testimony) {
-            const testimonyData = {
-              examId: app.currentExam.id,
-              examTitle: app.currentExam.title,
-              studentEmail: app.currentUser.email || null,
-              userId: app.currentUser.uid,
-              studentName: app.registeredStudent.name,
-              studentClass: app.registeredStudent.class,
-              testimony,
-              score,
-              percentage,
-              submittedAt: Date.now()
-            };
-            database.ref('testimonies/' + Date.now()).set(testimonyData);
-          }
-          document.getElementById('result-exam-title').textContent = app.currentExam.title;
-          document.getElementById('result-score').textContent = percentage + '%';
-          document.getElementById('result-marks').textContent = `${score} / ${totalMarks}`;
-          document.getElementById('result-date').textContent = '📅 ' + new Date().toLocaleString();
-          showView('exam-result');
-          app.currentExam = null;
-        })
-        .catch(err => alert('❌ Error: ' + err.message));
-    };
-
-    window.viewMyResult = function(examId) {
-      const result = Object.values(app.results).find(r => 
-        r.examId === examId && 
-        (r.userId === app.currentUser.uid || r.studentEmail === app.currentUser.email)
-      );
-      if (!result) return;
-      document.getElementById('result-exam-title').textContent = result.examTitle;
-      document.getElementById('result-score').textContent = result.percentage + '%';
-      document.getElementById('result-marks').textContent = `${result.score} / ${result.totalMarks}`;
-      document.getElementById('result-date').textContent = '📅 ' + new Date(result.submittedAt).toLocaleString();
-      showView('exam-result');
-    };
-        // Render Students with Pagination, Ranking & Delete
-    window.renderStudents = function() {
-      const tbody = document.getElementById('students-table-body');
-      if (!tbody) return;
-      
-      const isStaff = app.isAdmin || app.isTeacher;
-      
-      // Block students from viewing this
-      if (!isStaff) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#ef476f;padding:40px;">🔐 Teachers and Admin only</td></tr>';
-        return;
-      }
-      
-      const searchTerm = (document.getElementById('search-student').value || '').toLowerCase();
-      const classFilter = document.getElementById('filter-class').value;
-      const examFilter = document.getElementById('filter-exam-student').value;
-      
-      // Sort by percentage (highest to lowest)
-      let sorted = Object.values(app.results).sort((a, b) => b.percentage - a.percentage);
-      
-      // Apply filters
-      sorted = sorted.filter(r => {
-        const matchesSearch = !searchTerm || 
-          (r.studentName && r.studentName.toLowerCase().includes(searchTerm)) ||
-          (r.studentPhone && r.studentPhone.includes(searchTerm));
-        const matchesClass = !classFilter || r.studentClass === classFilter;
-        const matchesExam = !examFilter || r.examId === examFilter;
-        return matchesSearch && matchesClass && matchesExam;
-      });
-      
-      // Update filter options
-      const classes = [...new Set(sorted.map(r => r.studentClass).filter(c => c))].sort();
-      const filterClass = document.getElementById('filter-class');
-      if (filterClass && filterClass.options.length === 1) {
-        filterClass.innerHTML = '<option value="">All Classes</option>' + classes.map(c => `<option value="${c}">${c}</option>`).join('');
-      }
-      
-      const exams = [...new Set(sorted.map(r => r.examTitle).filter(e => e))];
-      const filterExam = document.getElementById('filter-exam-student');
-      if (filterExam && filterExam.options.length === 1) {
-        filterExam.innerHTML = '<option value="">All Exams</option>' + exams.map(e => `<option value="${Object.entries(app.exams).find(([id, ex]) => ex.title === e)?.[0]}">${e}</option>`).join('');
-      }
-      
-      // Pagination
-      const totalPages = Math.ceil(sorted.length / app.recordsPerPage);
-      if (app.currentPage > totalPages) app.currentPage = totalPages || 1;
-      
-      const start = (app.currentPage - 1) * app.recordsPerPage;
-      const end = start + app.recordsPerPage;
-      const pageData = sorted.slice(start, end);
-      
-      if (pageData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#718096;padding:40px;">No students found</td></tr>';
-        renderPagination(0);
-        return;
-      }
-      
-      tbody.innerHTML = pageData.map((r, index) => {
-        const rank = start + index + 1;
-        let rankClass = 'rank-badge';
-        if (rank === 1) rankClass += ' rank-1';
-        else if (rank === 2) rankClass += ' rank-2';
-        else if (rank === 3) rankClass += ' rank-3';
-        
-        return `
-          <tr>
-            <td><span class="${rankClass}">#${rank}</span></td>
-            <td>${r.studentName || 'N/A'}</td>
-            <td>${r.studentPhone || 'N/A'}</td>
-            <td>${r.studentClass || 'N/A'}</td>
-            <td>${r.examTitle}</td>
-            <td>${r.score} / ${r.totalMarks}</td>
-            <td><strong style="color:#667eea;font-size:16px;">${r.percentage}%</strong></td>
-            <td>${new Date(r.submittedAt).toLocaleDateString()}</td>
-            <td><button class="btn-danger btn-sm" onclick="deleteResult('${r.examId}', '${r.userId || r.studentEmail}', '${new Date(r.submittedAt).toISOString()}')"><i class="fas fa-trash"></i></button></td>
-          </tr>
-        `;
-      }).join('');
-      
-      renderPagination(totalPages);
-    };
-
-    // ✅ Delete Single Result (Staff Only)
-    window.deleteResult = function(examId, studentId, submittedAt) {
-      if (!app.isAdmin && !app.isTeacher) {
-        alert('🔐 Teachers and Admin only');
-        return;
-      }
-      
-      if (!confirm('⚠️ Delete this student\'s result?\n\nThis action cannot be undone!')) {
-        return;
-      }
-      
-      // Find and delete the specific result
-      const resultToDelete = Object.entries(app.results).find(([id, r]) => 
-        r.examId === examId && 
-        (r.userId === studentId || r.studentEmail === studentId) && 
-        new Date(r.submittedAt).toISOString() === submittedAt
-      );
-      
-      if (resultToDelete) {
-        database.ref('results/' + resultToDelete[0]).remove()
-          .then(() => {
-            alert('✅ Result deleted successfully!');
-            renderStudents();
-          })
-          .catch(err => {
-            alert('❌ Error deleting result: ' + err.message);
-          });
-      }
-    };
-
-    // Pagination Controls
-    function renderPagination(totalPages) {
-      const p = document.getElementById('pagination');
-      if (!p) return;
-      
-      if (totalPages <= 1) {
-        p.innerHTML = '';
-        return;
-      }
-      
-      p.innerHTML = `
-        <button onclick="changePage(1)" ${app.currentPage===1?'disabled':''}><i class="fas fa-angle-double-left"></i> First</button>
-        <button onclick="changePage(${app.currentPage-1})" ${app.currentPage===1?'disabled':''}><i class="fas fa-angle-left"></i> Prev</button>
-        <span class="pagination-info">Page ${app.currentPage} of ${totalPages}</span>
-        <button onclick="changePage(${app.currentPage+1})" ${app.currentPage===totalPages?'disabled':''}>Next <i class="fas fa-angle-right"></i></button>
-        <button onclick="changePage(${totalPages})" ${app.currentPage===totalPages?'disabled':''}>Last <i class="fas fa-angle-double-right"></i></button>
-      `;
-    }
-
-    window.changePage = function(page) {
-      app.currentPage = page;
-      renderStudents();
-    };
-
-    // Export Students to CSV
-    window.exportStudents = function() {
-      if (!app.isAdmin && !app.isTeacher) {
-        alert('🔐 Teachers and Admin only');
-        return;
-      }
-      
-      let csv = 'Rank,Name,Phone,Class,Exam,Score,Total,Percentage,Date\n';
-      const sorted = Object.values(app.results).sort((a, b) => b.percentage - a.percentage);
-      sorted.forEach((r, i) => {
-        csv += `${i+1},"${r.studentName || ''}","${r.studentPhone || ''}","${r.studentClass || ''}","${r.examTitle}",${r.score},${r.totalMarks},${r.percentage}%,${new Date(r.submittedAt).toLocaleString()}\n`;
-      });
-      
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'Students_Ranked_' + new Date().toISOString().split('T')[0] + '.csv';
-      a.click();
-      alert('✅ Exported!');
-    };
-
-    // Render Testimonies (Staff Only - Students can't see all)
-    window.renderTestimonies = function() {
-      const list = document.getElementById('testimonies-list');
-      if (!list) return;
-      
-      const isStaff = app.isAdmin || app.isTeacher;
-      
-      // Students can't view the testimonies list
-      if (!isStaff) {
-        list.innerHTML = '<p style="text-align:center;color:#718096;padding:40px;">💬 You can write a testimony after completing an exam</p>';
-        return;
-      }
-      
-      const searchTerm = (document.getElementById('search-testimony').value || '').toLowerCase();
-      
-      const filtered = Object.values(app.testimonies).filter(t => {
-        return !searchTerm || 
-          (t.studentName && t.studentName.toLowerCase().includes(searchTerm)) ||
-          (t.testimony && t.testimony.toLowerCase().includes(searchTerm)) ||
-          (t.examTitle && t.examTitle.toLowerCase().includes(searchTerm));
-      });
-      
-      if (filtered.length === 0) {
-        list.innerHTML = '<p style="text-align:center;color:#718096;padding:40px;">No testimonies yet</p>';
-        return;
-      }
-      
-      list.innerHTML = filtered.map(t => `
-        <div class="testimony-card">
-          <h4>💬 ${t.studentName || 'Anonymous'} - <span style="color:#667eea;">${t.percentage}%</span></h4>
-          <p>"${t.testimony}"</p>
-          <div class="meta">
-            <strong>Exam:</strong> ${t.examTitle} | 
-            <strong>Class:</strong> ${t.studentClass} | 
-            <strong>Date:</strong> ${new Date(t.submittedAt).toLocaleDateString()}
-          </div>
-        </div>
-      `).join('');
-    };
-        // Initialize
-    window.addEventListener('DOMContentLoaded', function() {
-      console.log('✅ Portal Ready!');
-      addQuestion();
-      
-      // If came from exam link
-      if (app.assignedExamId) {
-        loadExamForRegistration();
-        if (!app.currentUser) {
-          document.getElementById('auth-warning').style.display = 'block';
-          document.getElementById('auth-warning').innerHTML = '<h3>📝 Exam Access</h3><p>Login to take this exam</p><div style="margin-top:16px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;"><button class="btn-success" onclick="studentLogin()">👤 Student Login (Quick)</button><button class="btn-primary" onclick="teacherLogin()">👨‍🏫 Teacher Login</button></div>';
-        }
-      }
-    });
-
-    // Prevent navigation during exam
-    window.addEventListener('beforeunload', function(e) {
-      if (app.timer) {
-        e.preventDefault();
-        e.returnValue = 'You have an ongoing exam!';
-      }
-    });
+    function loadExamForRegistration() { if (!app.assignedExamId) return; database.ref('exams/' + app.assignedExamId).once('value').then(snapshot => { const exam = snapshot.val(); if (exam) { document.getElementById('assigned-exam-name').textContent = exam.title; document.getElementById('exam-access-info').style.display = 'block'; } else { alert('❌ Invalid exam link'); app.assignedExamId = null; } }); }
+    window.registerStudent = function(e) { e.preventDefault(); if (!app.currentUser) { alert('🔐 Please login first'); return; } const studentData = { name: document.getElementById('reg-name').value.trim(), phone: document.getElementById('reg-phone').value.trim(), class: document.getElementById('reg-class').value.trim(), email: app.currentUser.email || null, userId: app.currentUser.uid, isAnonymous: app.currentUser.isAnonymous, registeredAt: Date.now(), assignedExamId: app.assignedExamId }; database.ref('students/' + app.currentUser.uid).set(studentData).then(() => { app.registeredStudent = studentData; alert('✅ Registration successful!'); document.getElementById('register-form').reset(); showView('exams'); }).catch(err => alert('❌ Error: ' + err.message)); };
+    window.addTeacher = function(e) { e.preventDefault(); if (!app.isAdmin) { alert('🔐 Admin only'); return; } const email = document.getElementById('teacher-email').value.trim(); const name = document.getElementById('teacher-name').value.trim(); const password = 'Teacher' + Date.now(); auth.createUserWithEmailAndPassword(email, password).then(uc => database.ref('teachers/' + uc.user.uid).set({ email, name, addedBy: app.currentUser.email, addedAt: Date.now() })).then(() => { alert('✅ Teacher added!\nEmail: ' + email + '\nPassword: ' + password); e.target.reset(); renderTeachers(); }).catch(err => alert('❌ Error: ' + err.message)); };
+    function renderTeachers() { const list = document.getElementById('teachers-list'); if (!list) return; database.ref('teachers').once('value').then(snapshot => { const teachers = snapshot.val() || {}; if (Object.keys(teachers).length === 0) { list.innerHTML = '<p style="color:#718096;text-align:center;padding:20px;">No teachers yet</p>'; return; } list.innerHTML = Object.entries(teachers).map(([uid, t]) => '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:#f8fafc;border-radius:8px;margin-bottom:8px;"><div><strong>' + t.name + '</strong><br><small style="color:#718096;">' + t.email + '</small></div><button class="btn-danger btn-sm" onclick="removeTeacher(\'' + uid + '\')">🗑️ Remove</button></div>').join(''); }); }
+    window.removeTeacher = function(uid) { if (!confirm('Remove this teacher?')) return; database.ref('teachers/' + uid).remove().then(() => { alert('✅ Teacher removed'); renderTeachers(); }); };
+    function loadAllData() { database.ref('exams').on('value', snapshot => { app.exams = snapshot.val() || {}; renderExams(); }); database.ref('results').on('value', snapshot => { app.results = snapshot.val() || {}; renderStudents(); }); database.ref('testimonies').on('value', snapshot => { app.testimonies = snapshot.val() || {}; renderTestimonies(); }); if (app.currentUser) { database.ref('students/' + app.currentUser.uid).once('value').then(snapshot => { const student = snapshot.val(); if (student) app.registeredStudent = student; }); } }
+    window.addQuestion = function() { app.questionCount++; const container = document.getElementById('questions-container'); const questionDiv = document.createElement('div'); questionDiv.className = 'question-card'; questionDiv.style.cssText = 'background:#f8fafc;padding:20px;border-radius:12px;margin-bottom:16px;border:2px solid #e2e8f0;'; questionDiv.innerHTML = '<h4>Question ' + app.questionCount + '</h4><div class="form-group"><label>Question Text *</label><textarea name="q' + app.questionCount + '_text" rows="2" required placeholder="Enter question..."></textarea></div><div class="form-group"><label>Option A *</label><input type="text" name="q' + app.questionCount + '_a" required placeholder="Option A"/></div><div class="form-group"><label>Option B *</label><input type="text" name="q' + app.questionCount + '_b" required placeholder="Option B"/></div><div class="form-group"><label>Option C</label><input type="text" name="q' + app.questionCount + '_c" placeholder="Option C"/></div><div class="form-group"><label>Option D</label><input type="text" name="q' + app.questionCount + '_d" placeholder="Option D"/></div><div class="form-group"><label>Correct Answer *</label><select name="q' + app.questionCount + '_correct" required><option value="">Select correct answer</option><option value="a">Option A</option><option value="b">Option B</option><option value="c">Option C</option><option value="d">Option D</option></select></div><div class="form-group"><label>Marks *</label><input type="number" name="q' + app.questionCount + '_marks" required min="1" value="1"/></div><button type="button" class="btn-danger btn-sm" onclick="this.parentElement.remove()">🗑️ Remove</button>'; container.appendChild(questionDiv); };
+    window.createExam = function(e) { e.preventDefault(); if (!app.currentUser) { alert('🔐 Please login first'); return; } if (!app.isTeacher && !app.isAdmin) { alert('🔐 Teachers only'); return; } const title = document.getElementById('exam-title').value.trim(); const subject = document.getElementById('exam-subject').value.trim(); const duration = parseInt(document.getElementById('exam-duration').value); const totalMarks = parseInt(document.getElementById('exam-marks').value); const instructions = document.getElementById('exam-instructions').value.trim(); const questions = []; let qNum = 1; document.querySelectorAll('#questions-container .question-card').forEach(card => { const qText = card.querySelector('[name="q' + qNum + '_text"]').value.trim(); const qA = card.querySelector('[name="q' + qNum + '_a"]').value.trim(); const qB = card.querySelector('[name="q' + qNum + '_b"]').value.trim(); const qC = card.querySelector('[name="q' + qNum + '_c"]').value.trim(); const qD = card.querySelector('[name="q' + qNum + '_d"]').value.trim(); const qCorrect = card.querySelector('[name="q' + qNum + '_correct"]').value; const qMarks = parseInt(card.querySelector('[name="q' + qNum + '_marks"]').value); if (qText && qA && qB && qCorrect) questions.push({ text: qText, options: { a: qA, b: qB, c: qC || '', d: qD || '' }, correct: qCorrect, marks: qMarks }); qNum++; }); if (questions.length === 0) { alert('⚠️ Add at least one question'); return; } const exam = { title, subject, duration, totalMarks, instructions, questions, createdBy: app.currentUser.email || 'Teacher', createdAt: Date.now(), status: 'active', accessCode: 'exam_' + Date.now() }; const examId = exam.accessCode; database.ref('exams/' + examId).set(exam).then(() => { const baseUrl = window.location.href.split('?')[0]; const examLink = baseUrl + '?exam=' + examId; document.getElementById('exam-share-link').textContent = examLink; document.getElementById('exam-share-link').style.display = 'block'; document.getElementById('btn-copy-share').style.display = 'inline-block'; document.getElementById('btn-copy-share').dataset.link = examLink; document.getElementById('btn-copy-share').dataset.title = title; alert('✅ Exam published!'); document.getElementById('create-exam-form').reset(); document.getElementById('questions-container').innerHTML = ''; app.questionCount = 0; addQuestion(); }).catch(err => alert('❌ Error: ' + err.message)); };
+    window.copyAndShare = function() { const btn = document.getElementById('btn-copy-share'); const link = btn.dataset.link; navigator.clipboard.writeText(link).then(() => { alert('✅ Link copied!\n\n1. WhatsApp will open\n2. Select contact\n3. Paste link (long press)\n4. Send!'); setTimeout(() => { window.open('https://wa.me/', '_blank'); }, 1500); }).catch(() => { prompt('Copy this link:', link); }); };
+    window.renderExams = function() { const list = document.getElementById('exam-list'); if (!list) return; const isStaff = app.isAdmin || app.isTeacher; const isStudent = app.currentUser?.isAnonymous || !isStaff; const searchTerm = (document.getElementById('search-exam').value || '').toLowerCase(); const filter = document.getElementById('filter-exam').value; let filtered = Object.entries(app.exams); if (isStudent && app.registeredStudent && app.registeredStudent.assignedExamId) filtered = filtered.filter(([id, exam]) => id === app.registeredStudent.assignedExamId); else if (isStudent) filtered = []; filtered = filtered.filter(([id, exam]) => { const matchesSearch = !searchTerm || exam.title.toLowerCase().includes(searchTerm); const matchesFilter = !filter || (filter === 'active' && exam.status === 'active'); return matchesSearch && matchesFilter; }); if (filtered.length === 0) { list.innerHTML = '<p style="text-align:center;color:#718096;padding:40px;">' + (isStaff ? 'No exams yet. Create one!' : 'No exams assigned. Wait for teacher link.') + '</p>'; return; } const completedExams = Object.values(app.results).filter(r => r.userId === app.currentUser.uid).map(r => r.examId); list.innerHTML = filtered.map(([id, exam]) => { const isCompleted = completedExams.includes(id); return '<div class="exam-card"><h4>' + exam.title + '</h4><p><strong>Subject:</strong> ' + exam.subject + '</p><p><strong>Duration:</strong> ' + exam.duration + ' min</p><p><strong>Marks:</strong> ' + exam.totalMarks + '</p><p><strong>Questions:</strong> ' + exam.questions.length + '</p><span class="badge ' + (exam.status === 'active' ? 'badge-active' : 'badge-closed') + '">' + exam.status.toUpperCase() + '</span>' + (isCompleted ? '<span class="badge badge-assigned">✅ Completed</span>' : '') + (isStaff ? '<button class="btn-danger btn-sm" onclick="deleteExam(\'' + id + '\')" style="margin-top:12px;">🗑️ Delete</button>' : '') + (exam.status === 'active' && !isCompleted ? '<button class="btn-primary btn-sm" onclick="takeExam(\'' + id + '\')" style="margin-top:12px;width:100%;">📝 Take Exam</button>' : '') + (isCompleted ? '<button class="btn-secondary btn-sm" onclick="viewMyResult(\'' + id + '\')" style="margin-top:12px;width:100%;">📊 View Result</button>' : '') + '</div>'; }).join(''); };
+    window.deleteExam = function(examId) { if (!app.isAdmin && !app.isTeacher) { alert('🔐 Staff only'); return; } if (!confirm('⚠️ Delete exam and all results?')) return; database.ref('exams/' + examId).remove().then(() => { const resultsToDelete = Object.entries(app.results).filter(([id, r]) => r.examId === examId).map(([id]) => 'results/' + id); if (resultsToDelete.length > 0) { const updates = {}; resultsToDelete.forEach(p => updates[p] = null); return database.ref().update(updates); } }).then(() => { alert('✅ Deleted!'); renderExams(); }).catch(err => alert('❌ Error: ' + err.message)); };
+    window.takeExam = function(examId) { if (!app.registeredStudent) { alert('📝 Register first!'); showView('register'); return; } const exam = app.exams[examId]; if (!exam) return; app.currentExam = { id: examId, ...exam }; app.timeRemaining = exam.duration * 60; document.getElementById('take-exam-title').textContent = exam.title; document.getElementById('exam-instructions-display').innerHTML = exam.instructions ? '<p><strong>Instructions:</strong> ' + exam.instructions + '</p>' : ''; const container = document.getElementById('exam-questions-container'); container.innerHTML = exam.questions.map((q, i) => '<div class="question-card" style="background:#f8fafc;padding:20px;border-radius:12px;margin-bottom:16px;border:2px solid #e2e8f0;"><h4>Question ' + (i + 1) + ' (' + q.marks + ' marks)</h4><p style="margin-bottom:16px;">' + q.text + '</p><ul class="options-list" style="list-style:none;">' + (q.options.a ? '<li style="margin:8px 0;"><label style="display:flex;align-items:center;gap:10px;padding:10px;background:white;border-radius:8px;cursor:pointer;"><input type="radio" name="q' + i + '" value="a"/> ' + q.options.a + '</label></li>' : '') + (q.options.b ? '<li style="margin:8px 0;"><label style="display:flex;align-items:center;gap:10px;padding:10px;background:white;border-radius:8px;cursor:pointer;"><input type="radio" name="q' + i + '" value="b"/> ' + q.options.b + '</label></li>' : '') + (q.options.c ? '<li style="margin:8px 0;"><label style="display:flex;align-items:center;gap:10px;padding:10px;background:white;border-radius:8px;cursor:pointer;"><input type="radio" name="q' + i + '" value="c"/> ' + q.options.c + '</label></li>' : '') + (q.options.d ? '<li style="margin:8px 0;"><label style="display:flex;align-items:center;gap:10px;padding:10px;background:white;border-radius:8px;cursor:pointer;"><input type="radio" name="q' + i + '" value="d"/> ' + q.options.d + '</label></li>' : '') + '</ul></div>').join(''); showView('take-exam'); startTimer(); };
+    function startTimer() { const timerEl = document.getElementById('exam-timer'); app.timer = setInterval(() => { app.timeRemaining--; const m = Math.floor(app.timeRemaining / 60); const s = app.timeRemaining % 60; timerEl.textContent = '⏱️ ' + m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0'); if (app.timeRemaining <= 60) timerEl.classList.add('urgent'); if (app.timeRemaining <= 0) { clearInterval(app.timer); alert('⏰ Time up!'); submitExam(null, true); } }, 1000); }
+    window.submitExam = function(e, autoSubmit = false) { if (e) e.preventDefault(); if (!app.currentExam || !app.currentUser || !app.registeredStudent) return; if (!autoSubmit && !confirm('📤 Submit?')) return; clearInterval(app.timer); let score = 0, totalMarks = 0; const answers = {}; app.currentExam.questions.forEach((q, i) => { const selected = document.querySelector('input[name="q' + i + '"]:checked'); const userAnswer = selected ? selected.value : null; answers['q' + i] = userAnswer; totalMarks += q.marks; if (userAnswer === q.correct) score += q.marks; }); const percentage = Math.round((score / totalMarks) * 100); const testimony = document.getElementById('exam-testimony').value.trim(); const result = { examId: app.currentExam.id, examTitle: app.currentExam.title, studentEmail: app.currentUser.email || null, userId: app.currentUser.uid, isAnonymous: app.currentUser.isAnonymous, studentName: app.registeredStudent.name, studentPhone: app.registeredStudent.phone, studentClass: app.registeredStudent.class, score, totalMarks, percentage, answers, submittedAt: Date.now(), autoSubmitted: autoSubmit }; const resultId = 'result_' + app.currentUser.uid + '_' + Date.now(); database.ref('results/' + resultId).set(result).then(() => { if (testimony) { const testimonyData = { examId: app.currentExam.id, examTitle: app.currentExam.title, studentEmail: app.currentUser.email || null, userId: app.currentUser.uid, studentName: app.registeredStudent.name, studentClass: app.registeredStudent.class, testimony, score, percentage, submittedAt: Date.now() }; database.ref('testimonies/' + Date.now()).set(testimonyData); } document.getElementById('result-exam-title').textContent = app.currentExam.title; document.getElementById('result-score').textContent = percentage + '%'; document.getElementById('result-marks').textContent = score + ' / ' + totalMarks; document.getElementById('result-date').textContent = '📅 ' + new Date().toLocaleString(); showView('exam-result'); app.currentExam = null; }).catch(err => alert('❌ Error: ' + err.message)); };
+    window.viewMyResult = function(examId) { const result = Object.values(app.results).find(r => r.examId === examId && r.userId === app.currentUser.uid); if (!result) return; document.getElementById('result-exam-title').textContent = result.examTitle; document.getElementById('result-score').textContent = result.percentage + '%'; document.getElementById('result-marks').textContent = result.score + ' / ' + result.totalMarks; document.getElementById('result-date').textContent = '📅 ' + new Date(result.submittedAt).toLocaleString(); showView('exam-result'); };
+    window.renderStudents = function() { const tbody = document.getElementById('students-table-body'); if (!tbody) return; const isStaff = app.isAdmin || app.isTeacher; if (!isStaff) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#ef476f;padding:40px;">🔐 Staff only</td></tr>'; return; } const searchTerm = (document.getElementById('search-student').value || '').toLowerCase(); let sorted = Object.values(app.results).sort((a, b) => b.percentage - a.percentage); sorted = sorted.filter(r => !searchTerm || (r.studentName && r.studentName.toLowerCase().includes(searchTerm))); const totalPages = Math.ceil(sorted.length / app.recordsPerPage); if (app.currentPage > totalPages) app.currentPage = totalPages || 1; const start = (app.currentPage - 1) * app.recordsPerPage; const pageData = sorted.slice(start, start + app.recordsPerPage); if (pageData.length === 0) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#718096;padding:40px;">No students</td></tr>'; renderPagination(0); return; } tbody.innerHTML = pageData.map((r, i) => { const rank = start + i + 1; let rc = 'rank-badge'; if (rank === 1) rc += ' rank-1'; else if (rank === 2) rc += ' rank-2'; else if (rank === 3) rc += ' rank-3'; return '<tr><td><span class="' + rc + '">#' + rank + '</span></td><td>' + (r.studentName || 'N/A') + '</td><td>' + (r.studentPhone || 'N/A') + '</td><td>' + (r.studentClass || 'N/A') + '</td><td>' + r.examTitle + '</td><td>' + r.score + '/' + r.totalMarks + '</td><td><strong>' + r.percentage + '%</strong></td><td><button class="btn-danger btn-sm" onclick="deleteResult(\'' + r.examId + '\',\'' + r.userId + '\',\'' + new Date(r.submittedAt).toISOString() + '\')"><i class="fas fa-trash"></i></button></td></tr>'; }).join(''); renderPagination(totalPages); };
+    window.deleteResult = function(examId, studentId, submittedAt) { if (!app.isAdmin && !app.isTeacher) return; if (!confirm('Delete this result?')) return; const rt = Object.entries(app.results).find(([id, r]) => r.examId === examId && r.userId === studentId && new Date(r.submittedAt).toISOString() === submittedAt); if (rt) database.ref('results/' + rt[0]).remove().then(() => { alert('✅ Deleted!'); renderStudents(); }).catch(err => alert('❌ Error: ' + err.message)); };
+    function renderPagination(totalPages) { const p = document.getElementById('pagination'); if (!p) return; if (totalPages <= 1) { p.innerHTML = ''; return; } p.innerHTML = '<button onclick="changePage(1)" ' + (app.currentPage===1?'disabled':'') + '><i class="fas fa-angle-double-left"></i></button><button onclick="changePage(' + (app.currentPage-1) + ')" ' + (app.currentPage===1?'disabled':'') + '><i class="fas fa-angle-left"></i></button><span class="pagination-info" style="margin:0 16px;">Page ' + app.currentPage + ' of ' + totalPages + '</span><button onclick="changePage(' + (app.currentPage+1) + ')" ' + (app.currentPage===totalPages?'disabled':'') + '><i class="fas fa-angle-right"></i></button><button onclick="changePage(' + totalPages + ')" ' + (app.currentPage===totalPages?'disabled':'') + '><i class="fas fa-angle-double-right"></i></button>'; }
+    window.changePage = function(page) { app.currentPage = page; renderStudents(); };
+    window.exportStudents = function() { if (!app.isAdmin && !app.isTeacher) { alert('🔐 Staff only'); return; } let csv = 'Rank,Name,Phone,Class,Exam,Score,Total,Percentage,Date\n'; Object.values(app.results).sort((a, b) => b.percentage - a.percentage).forEach((r, i) => { csv += (i+1) + ',"' + (r.studentName || '') + '","' + (r.studentPhone || '') + '","' + (r.studentClass || '') + '","' + r.examTitle + '",' + r.score + ',' + r.totalMarks + ',' + r.percentage + '%,' + new Date(r.submittedAt).toLocaleString() + '\n'; }); const blob = new Blob([csv], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Students_' + new Date().toISOString().split('T')[0] + '.csv'; a.click(); alert('✅ Exported!'); };
+    window.renderTestimonies = function() { const list = document.getElementById('testimonies-list'); if (!list) return; const isStaff = app.isAdmin || app.isTeacher; if (!isStaff) { list.innerHTML = '<p style="text-align:center;color:#718096;padding:40px;">💬 Write testimony after exam</p>'; return; } const filtered = Object.values(app.testimonies); if (filtered.length === 0) { list.innerHTML = '<p style="text-align:center;color:#718096;padding:40px;">No testimonies</p>'; return; } list.innerHTML = filtered.map(t => '<div class="testimony-card"><h4>💬 ' + (t.studentName || 'Anonymous') + ' - <span style="color:#667eea;">' + t.percentage + '%</span></h4><p>"' + t.testimony + '"</p><div class="meta" style="color:#64748b;font-size:13px;margin-top:8px;"><strong>Exam:</strong> ' + t.examTitle + ' | <strong>Class:</strong> ' + t.studentClass + ' | <strong>Date:</strong> ' + new Date(t.submittedAt).toLocaleDateString() + '</div></div>').join(''); };
+    window.addEventListener('DOMContentLoaded', function() { console.log('✅ Portal Ready!'); addQuestion(); if (app.assignedExamId) { loadExamForRegistration(); if (!app.currentUser) document.getElementById('auth-warning').style.display = 'block'; } });
+    window.addEventListener('beforeunload', function(e) { if (app.timer) { e.preventDefault(); e.returnValue = 'Exam in progress!'; } });
   </script>
 </body>
 </html>
