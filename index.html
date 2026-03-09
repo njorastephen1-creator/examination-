@@ -415,10 +415,10 @@
 
     // ✅ Student Login (Anonymous - One Click)
     window.studentLogin = function() {
+      console.log('🔵 Student login clicked');
       auth.signInAnonymously()
-        .then(() => {
-          console.log('✅ Anonymous login successful');
-          // If came from exam link, go to register
+        .then((credential) => {
+          console.log('✅ Anonymous login successful:', credential.user.uid);
           if (app.assignedExamId) {
             showView('register');
           } else {
@@ -427,20 +427,22 @@
         })
         .catch((error) => {
           console.error('❌ Anonymous login error:', error);
-          alert('❌ Error: ' + error.message);
+          alert('❌ Error: ' + error.message + '\n\nMake sure Anonymous Authentication is enabled in Firebase Console.');
         });
     };
 
     // ✅ Teacher Login (Email/Password)
     window.teacherLogin = function() {
+      console.log('🔵 Teacher login clicked');
       const email = prompt('Teacher Email:');
       if (!email) return;
-      
       const password = prompt('Password:');
       if (!password) return;
       
+      console.log('🔵 Attempting login with:', email);
       auth.signInWithEmailAndPassword(email, password)
-        .then(() => {
+        .then((credential) => {
+          console.log('✅ Teacher login successful:', credential.user.uid);
           alert('✅ Teacher login successful!');
           return checkUserRole();
         })
@@ -450,11 +452,12 @@
           }
         })
         .catch(err => {
+          console.error('❌ Teacher login error:', err);
           alert('❌ Teacher login failed: ' + err.message);
         });
     };
 
-        // ✅ Role Checking with UI Updates - CORRECTED
+    // ✅ Role Checking with UI Updates - CORRECTED FOR YOUR REQUIREMENTS
     function checkUserRole() {
       return Promise.all([
         database.ref('authorized_users/' + app.currentUser.uid).once('value').then(snapshot => {
@@ -463,6 +466,7 @@
             app.isAdmin = userData.role === 'Admin';
             app.isTeacher = userData.role === 'Teacher' || userData.role === 'Admin';
           } else if (!app.currentUser.isAnonymous) {
+            // First non-anonymous user becomes admin
             app.isAdmin = true;
             app.isTeacher = true;
             database.ref('authorized_users/' + app.currentUser.uid).set({
@@ -474,7 +478,6 @@
             }).catch(err => console.error('Error saving admin:', err));
           }
         }),
-        
         database.ref('teachers').orderByChild('email').equalTo(app.currentUser.email).once('value').then(snapshot => {
           if (snapshot.exists()) {
             app.isTeacher = true;
@@ -482,64 +485,51 @@
         })
       ]).then(() => {
         const isStaff = app.isAdmin || app.isTeacher;
+        console.log('✅ User Role - Admin:', app.isAdmin, 'Teacher:', app.isTeacher, 'Anonymous:', app.currentUser?.isAnonymous);
         
-        // ✅ ALWAYS ENABLE - Students NEED these to take exams
-        document.getElementById('btn-exams').disabled = false;
-        document.getElementById('btn-register').disabled = false;
-        document.getElementById('btn-exams').style.display = 'inline-block';
-        document.getElementById('btn-register').style.display = 'inline-block';
+        // ✅ STUDENTS (Anonymous) - ONLY see Exams & Register
+        if (app.currentUser.isAnonymous || !isStaff) {
+          document.getElementById('btn-exams').disabled = false;
+          document.getElementById('btn-exams').style.display = 'inline-block';
+          document.getElementById('btn-register').disabled = false;
+          document.getElementById('btn-register').style.display = 'inline-block';
+          // HIDE all staff features from students
+          document.getElementById('btn-students').style.display = 'none';
+          document.getElementById('btn-testimonies').style.display = 'none';
+          document.getElementById('btn-create').style.display = 'none';
+          document.getElementById('btn-teachers').style.display = 'none';
+          console.log('👤 Student access: Only Exams & Register');
+        }
         
-        // ✅ STAFF ONLY - Hide/disable for students
-        document.getElementById('btn-students').disabled = !isStaff;
-        document.getElementById('btn-students').style.display = isStaff ? 'inline-block' : 'none';
-        
-        document.getElementById('btn-testimonies').disabled = !isStaff;
-        document.getElementById('btn-testimonies').style.display = isStaff ? 'inline-block' : 'none';
-        
-        document.getElementById('btn-create').disabled = !isStaff;
-        document.getElementById('btn-create').style.display = isStaff ? 'inline-block' : 'none';
-        
-        document.getElementById('btn-teachers').disabled = !app.isAdmin;
-        document.getElementById('btn-teachers').style.display = app.isAdmin ? 'inline-block' : 'none';
-        
-        console.log('✅ Navigation set - Students see: Exams, Register | Staff see: All');
-      });
-    }
-        
-        // Check if user is in teachers list
-        database.ref('teachers').orderByChild('email').equalTo(app.currentUser.email).once('value').then(snapshot => {
-          if (snapshot.exists()) {
-            app.isTeacher = true;
-          }
-        })
-      ]).then(() => {
-        const isStaff = app.isAdmin || app.isTeacher;
-        
-        // Show/hide navigation based on role
-        document.getElementById('btn-exams').style.display = 'inline-block';
-        document.getElementById('btn-register').style.display = 'inline-block';
-        document.getElementById('btn-students').style.display = isStaff ? 'inline-block' : 'none';
-        document.getElementById('btn-testimonies').style.display = isStaff ? 'inline-block' : 'none';
-        document.getElementById('btn-create').style.display = isStaff ? 'inline-block' : 'none';
-        document.getElementById('btn-teachers').style.display = app.isAdmin ? 'inline-block' : 'none';
-        
-        // Enable/disable buttons
-        document.getElementById('btn-students').disabled = !isStaff;
-        document.getElementById('btn-create').disabled = !isStaff;
-        document.getElementById('btn-teachers').disabled = !app.isAdmin;
-        
-        console.log('✅ Access set - Admin:', app.isAdmin, 'Teacher:', app.isTeacher, 'Anonymous:', app.currentUser?.isAnonymous);
+        // ✅ STAFF (Admin/Teachers) - See EVERYTHING
+        if (isStaff) {
+          document.getElementById('btn-exams').disabled = false;
+          document.getElementById('btn-exams').style.display = 'inline-block';
+          document.getElementById('btn-register').disabled = false;
+          document.getElementById('btn-register').style.display = 'inline-block';
+          document.getElementById('btn-students').disabled = false;
+          document.getElementById('btn-students').style.display = 'inline-block';
+          document.getElementById('btn-testimonies').disabled = false;
+          document.getElementById('btn-testimonies').style.display = 'inline-block';
+          document.getElementById('btn-create').disabled = false;
+          document.getElementById('btn-create').style.display = 'inline-block';
+          document.getElementById('btn-teachers').disabled = !app.isAdmin;
+          document.getElementById('btn-teachers').style.display = app.isAdmin ? 'inline-block' : 'none';
+          console.log('👨‍🏫 Staff access: ALL features');
+        }
       });
     }
 
-    // ✅ View Switching with Access Control
+    // ✅ View Switching with Access Control - CORRECTED
     window.showView = function(viewName) {
       const isStaff = app.isAdmin || app.isTeacher;
+      const isStudent = app.currentUser?.isAnonymous || !isStaff;
+      console.log('🔵 Switching to view:', viewName, '| Is Student:', isStudent, '| Is Staff:', isStaff);
       
-      // Block students from accessing staff-only views
-      if (!isStaff) {
+      // 🚫 BLOCK STUDENTS from staff-only views
+      if (isStudent) {
         if (viewName === 'create' || viewName === 'students' || viewName === 'teachers') {
-          alert('🔐 This section is for teachers and admin only');
+          alert('🔐 Teachers and Admin only');
           showView('exams');
           return;
         }
@@ -557,11 +547,14 @@
         return;
       }
       
-      // Switch view
+      // Hide all views
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      // Remove active class from all nav buttons
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById(viewName).classList.add('active');
-      
+      // Show target view
+      const targetView = document.getElementById(viewName);
+      if (targetView) targetView.classList.add('active');
+      // Set active nav button
       const btnId = 'btn-' + viewName;
       const btn = document.getElementById(btnId);
       if (btn) btn.classList.add('active');
@@ -570,36 +563,16 @@
       if (viewName === 'exams') {
         renderExams();
         const notice = document.getElementById('student-exam-notice');
-        if (notice) {
-          notice.style.display = !isStaff ? 'block' : 'none';
-        }
+        if (notice) notice.style.display = isStudent ? 'block' : 'none';
       }
-      if (viewName === 'students') {
-        if (isStaff) {
-          app.currentPage = 1;
-          renderStudents();
-        }
-      }
-      if (viewName === 'testimonies') {
-        if (isStaff) {
-          renderTestimonies();
-        }
-      }
-      if (viewName === 'teachers') {
-        if (app.isAdmin) {
-          renderTeachers();
-        }
-      }
-      if (viewName === 'create') {
-        if (isStaff) {
-          addQuestion();
-        }
-      }
+      if (viewName === 'students') { if (isStaff) { app.currentPage = 1; renderStudents(); } }
+      if (viewName === 'testimonies') { if (isStaff) renderTestimonies(); }
+      if (viewName === 'teachers') { if (app.isAdmin) renderTeachers(); }
+      if (viewName === 'create') { if (isStaff) addQuestion(); }
     };
 
     function loadExamForRegistration() {
       if (!app.assignedExamId) return;
-      
       database.ref('exams/' + app.assignedExamId).once('value').then(snapshot => {
         const exam = snapshot.val();
         if (exam) {
@@ -614,26 +587,18 @@
 
     window.registerStudent = function(e) {
       e.preventDefault();
-      if (!app.currentUser) { 
-        alert('🔐 Please login first'); 
-        return; 
-      }
-      
+      if (!app.currentUser) { alert('🔐 Please login first'); return; }
       const name = document.getElementById('reg-name').value.trim();
       const phone = document.getElementById('reg-phone').value.trim();
       const classNum = document.getElementById('reg-class').value.trim();
-      
       const studentData = {
-        name,
-        phone,
-        class: classNum,
-        email: app.currentUser.email || null, // Anonymous users have null email
+        name, phone, class: classNum,
+        email: app.currentUser.email || null,
         userId: app.currentUser.uid,
         isAnonymous: app.currentUser.isAnonymous,
         registeredAt: Date.now(),
         assignedExamId: app.assignedExamId
       };
-      
       database.ref('students/' + app.currentUser.uid).set(studentData)
         .then(() => {
           app.registeredStudent = studentData;
@@ -647,20 +612,11 @@
     window.addTeacher = function(e) {
       e.preventDefault();
       if (!app.isAdmin) { alert('🔐 Admin only'); return; }
-      
       const email = document.getElementById('teacher-email').value.trim();
       const name = document.getElementById('teacher-name').value.trim();
-      
       const password = 'Teacher' + Date.now();
       auth.createUserWithEmailAndPassword(email, password)
-        .then(uc => {
-          return database.ref('teachers/' + uc.user.uid).set({
-            email,
-            name,
-            addedBy: app.currentUser.email,
-            addedAt: Date.now()
-          });
-        })
+        .then(uc => database.ref('teachers/' + uc.user.uid).set({ email, name, addedBy: app.currentUser.email, addedAt: Date.now() }))
         .then(() => {
           alert(`✅ Teacher added!\nEmail: ${email}\nTemp Password: ${password}\n\nPlease share credentials.`);
           e.target.reset();
@@ -672,20 +628,15 @@
     function renderTeachers() {
       const list = document.getElementById('teachers-list');
       if (!list) return;
-      
       database.ref('teachers').once('value').then(snapshot => {
         const teachers = snapshot.val() || {};
         if (Object.keys(teachers).length === 0) {
           list.innerHTML = '<p style="color:#718096;text-align:center;padding:20px;">No teachers yet</p>';
           return;
         }
-        
         list.innerHTML = Object.entries(teachers).map(([uid, t]) => `
           <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:#f8fafc;border-radius:8px;margin-bottom:8px;">
-            <div>
-              <strong>${t.name}</strong><br>
-              <small style="color:#718096;">${t.email}</small>
-            </div>
+            <div><strong>${t.name}</strong><br><small style="color:#718096;">${t.email}</small></div>
             <button class="btn-danger btn-sm" onclick="removeTeacher('${uid}')">🗑️ Remove</button>
           </div>
         `).join('');
@@ -699,25 +650,13 @@
     };
 
     function loadAllData() {
-      database.ref('exams').on('value', snapshot => { 
-        app.exams = snapshot.val() || {}; 
-        renderExams(); 
-      });
-      database.ref('results').on('value', snapshot => { 
-        app.results = snapshot.val() || {}; 
-        renderStudents(); 
-      });
-      database.ref('testimonies').on('value', snapshot => { 
-        app.testimonies = snapshot.val() || {}; 
-        renderTestimonies(); 
-      });
-      
+      database.ref('exams').on('value', snapshot => { app.exams = snapshot.val() || {}; renderExams(); });
+      database.ref('results').on('value', snapshot => { app.results = snapshot.val() || {}; renderStudents(); });
+      database.ref('testimonies').on('value', snapshot => { app.testimonies = snapshot.val() || {}; renderTestimonies(); });
       if (app.currentUser) {
         database.ref('students/' + app.currentUser.uid).once('value').then(snapshot => {
           const student = snapshot.val();
-          if (student) {
-            app.registeredStudent = student;
-          }
+          if (student) app.registeredStudent = student;
         });
       }
     }
@@ -729,40 +668,13 @@
       questionDiv.className = 'question-card';
       questionDiv.innerHTML = `
         <h4>Question ${app.questionCount}</h4>
-        <div class="form-group">
-          <label>Question Text *</label>
-          <textarea name="q${app.questionCount}_text" rows="2" required placeholder="Enter question..."></textarea>
-        </div>
-        <div class="form-group">
-          <label>Option A *</label>
-          <input type="text" name="q${app.questionCount}_a" required placeholder="Option A"/>
-        </div>
-        <div class="form-group">
-          <label>Option B *</label>
-          <input type="text" name="q${app.questionCount}_b" required placeholder="Option B"/>
-        </div>
-        <div class="form-group">
-          <label>Option C</label>
-          <input type="text" name="q${app.questionCount}_c" placeholder="Option C"/>
-        </div>
-        <div class="form-group">
-          <label>Option D</label>
-          <input type="text" name="q${app.questionCount}_d" placeholder="Option D"/>
-        </div>
-        <div class="form-group">
-          <label>Correct Answer *</label>
-          <select name="q${app.questionCount}_correct" required>
-            <option value="">Select correct answer</option>
-            <option value="a">Option A</option>
-            <option value="b">Option B</option>
-            <option value="c">Option C</option>
-            <option value="d">Option D</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Marks for this question *</label>
-          <input type="number" name="q${app.questionCount}_marks" required min="1" value="1"/>
-        </div>
+        <div class="form-group"><label>Question Text *</label><textarea name="q${app.questionCount}_text" rows="2" required placeholder="Enter question..."></textarea></div>
+        <div class="form-group"><label>Option A *</label><input type="text" name="q${app.questionCount}_a" required placeholder="Option A"/></div>
+        <div class="form-group"><label>Option B *</label><input type="text" name="q${app.questionCount}_b" required placeholder="Option B"/></div>
+        <div class="form-group"><label>Option C</label><input type="text" name="q${app.questionCount}_c" placeholder="Option C"/></div>
+        <div class="form-group"><label>Option D</label><input type="text" name="q${app.questionCount}_d" placeholder="Option D"/></div>
+        <div class="form-group"><label>Correct Answer *</label><select name="q${app.questionCount}_correct" required><option value="">Select correct answer</option><option value="a">Option A</option><option value="b">Option B</option><option value="c">Option C</option><option value="d">Option D</option></select></div>
+        <div class="form-group"><label>Marks for this question *</label><input type="number" name="q${app.questionCount}_marks" required min="1" value="1"/></div>
         <button type="button" class="btn-danger btn-sm" onclick="this.parentElement.remove()">🗑️ Remove</button>
       `;
       container.appendChild(questionDiv);
@@ -772,13 +684,11 @@
       e.preventDefault();
       if (!app.currentUser) { alert('🔐 Please login first'); return; }
       if (!app.isTeacher && !app.isAdmin) { alert('🔐 Teachers only'); return; }
-      
       const title = document.getElementById('exam-title').value.trim();
       const subject = document.getElementById('exam-subject').value.trim();
       const duration = parseInt(document.getElementById('exam-duration').value);
       const totalMarks = parseInt(document.getElementById('exam-marks').value);
       const instructions = document.getElementById('exam-instructions').value.trim();
-      
       const questions = [];
       let qNum = 1;
       document.querySelectorAll('#questions-container .question-card').forEach(card => {
@@ -789,46 +699,23 @@
         const qD = card.querySelector(`[name="q${qNum}_d"]`).value.trim();
         const qCorrect = card.querySelector(`[name="q${qNum}_correct"]`).value;
         const qMarks = parseInt(card.querySelector(`[name="q${qNum}_marks"]`).value);
-        
         if (qText && qA && qB && qCorrect) {
-          questions.push({
-            text: qText,
-            options: { a: qA, b: qB, c: qC || '', d: qD || '' },
-            correct: qCorrect,
-            marks: qMarks
-          });
+          questions.push({ text: qText, options: { a: qA, b: qB, c: qC || '', d: qD || '' }, correct: qCorrect, marks: qMarks });
         }
         qNum++;
       });
-      
       if (questions.length === 0) { alert('⚠️ Add at least one question'); return; }
-      
-      const exam = {
-        title,
-        subject,
-        duration,
-        totalMarks,
-        instructions,
-        questions,
-        createdBy: app.currentUser.email || 'Anonymous Teacher',
-        createdAt: Date.now(),
-        status: 'active',
-        accessCode: 'exam_' + Date.now()
-      };
-      
+      const exam = { title, subject, duration, totalMarks, instructions, questions, createdBy: app.currentUser.email || 'Anonymous Teacher', createdAt: Date.now(), status: 'active', accessCode: 'exam_' + Date.now() };
       const examId = exam.accessCode;
       database.ref('exams/' + examId).set(exam)
         .then(() => {
-          // Generate share link
           const baseUrl = window.location.href.split('?')[0];
           const examLink = `${baseUrl}?exam=${examId}`;
-          
           document.getElementById('exam-share-link').textContent = examLink;
           document.getElementById('exam-share-link').style.display = 'block';
           document.getElementById('btn-copy-share').style.display = 'inline-block';
           document.getElementById('btn-copy-share').dataset.link = examLink;
           document.getElementById('btn-copy-share').dataset.title = title;
-          
           alert('✅ Exam published! Click "Copy Link & Open WhatsApp" to share.');
           document.getElementById('create-exam-form').reset();
           document.getElementById('questions-container').innerHTML = '';
@@ -838,38 +725,31 @@
         .catch(err => alert('❌ Error: ' + err.message));
     };
 
-    // ✅ Copy Link & Open WhatsApp
     window.copyAndShare = function() {
       const btn = document.getElementById('btn-copy-share');
       const link = btn.dataset.link;
-      const title = btn.dataset.title;
-      
       navigator.clipboard.writeText(link).then(() => {
         alert('✅ Link copied!\n\n1. WhatsApp will open now\n2. Select contact/group\n3. Paste the link (long press → Paste)\n4. Send!');
-        setTimeout(() => {
-          window.open('https://wa.me/', '_blank');
-        }, 1500);
-      }).catch(() => {
-                prompt('Copy this link:', link);
-      });
+        setTimeout(() => { window.open('https://wa.me/', '_blank'); }, 1500);
+      }).catch(() => { prompt('Copy this link:', link); });
     };
-
-    window.renderExams = function() {
+        window.renderExams = function() {
       const list = document.getElementById('exam-list');
       if (!list) return;
       
       const isStaff = app.isAdmin || app.isTeacher;
+      const isStudent = app.currentUser?.isAnonymous || !isStaff;
       const searchTerm = (document.getElementById('search-exam').value || '').toLowerCase();
       const filter = document.getElementById('filter-exam').value;
       
       let filtered = Object.entries(app.exams);
       
       // STUDENTS: Only see their assigned exam
-      if (!isStaff && app.registeredStudent && app.registeredStudent.assignedExamId) {
+      if (isStudent && app.registeredStudent && app.registeredStudent.assignedExamId) {
         filtered = filtered.filter(([id, exam]) => id === app.registeredStudent.assignedExamId);
       } 
       // Unregistered students see nothing
-      else if (!isStaff) {
+      else if (isStudent) {
         filtered = [];
       }
       
@@ -889,7 +769,7 @@
       
       // Check if student already completed exam
       const completedExams = Object.values(app.results)
-        .filter(r => r.studentEmail === app.currentUser.email || r.userId === app.currentUser.uid)
+        .filter(r => r.userId === app.currentUser.uid || r.studentEmail === app.currentUser.email)
         .map(r => r.examId);
       
       list.innerHTML = filtered.map(([id, exam]) => {
@@ -917,19 +797,14 @@
         alert('🔐 Teachers and Admin only');
         return;
       }
-      
       if (!confirm('⚠️ Delete this exam?\n\nThis will also delete all student results for this exam.\n\nThis action cannot be undone!')) {
         return;
       }
-      
-      // Delete exam
       database.ref('exams/' + examId).remove()
         .then(() => {
-          // Delete all results for this exam
           const resultsToDelete = Object.entries(app.results)
             .filter(([id, result]) => result.examId === examId)
             .map(([id]) => 'results/' + id);
-          
           if (resultsToDelete.length > 0) {
             const updates = {};
             resultsToDelete.forEach(path => updates[path] = null);
@@ -951,12 +826,10 @@
         showView('register');
         return;
       }
-      
       if (app.registeredStudent.assignedExamId && app.registeredStudent.assignedExamId !== examId) {
         alert('🔐 You can only take the exam assigned to you.');
         return;
       }
-      
       const exam = app.exams[examId];
       if (!exam) return;
       
@@ -991,7 +864,6 @@
         const minutes = Math.floor(app.timeRemaining / 60);
         const seconds = app.timeRemaining % 60;
         timerEl.textContent = `⏱️ ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        
         if (app.timeRemaining <= 60) timerEl.classList.add('urgent');
         if (app.timeRemaining <= 0) {
           clearInterval(app.timer);
@@ -1004,7 +876,6 @@
     window.submitExam = function(e, autoSubmit = false) {
       if (e) e.preventDefault();
       if (!app.currentExam || !app.currentUser || !app.registeredStudent) return;
-      
       if (!autoSubmit && !confirm('📤 Submit exam?')) return;
       
       clearInterval(app.timer);
@@ -1059,12 +930,10 @@
             };
             database.ref('testimonies/' + Date.now()).set(testimonyData);
           }
-          
           document.getElementById('result-exam-title').textContent = app.currentExam.title;
           document.getElementById('result-score').textContent = percentage + '%';
           document.getElementById('result-marks').textContent = `${score} / ${totalMarks}`;
           document.getElementById('result-date').textContent = '📅 ' + new Date().toLocaleString();
-          
           showView('exam-result');
           app.currentExam = null;
         })
@@ -1074,10 +943,9 @@
     window.viewMyResult = function(examId) {
       const result = Object.values(app.results).find(r => 
         r.examId === examId && 
-        (r.studentEmail === app.currentUser.email || r.userId === app.currentUser.uid)
+        (r.userId === app.currentUser.uid || r.studentEmail === app.currentUser.email)
       );
       if (!result) return;
-      
       document.getElementById('result-exam-title').textContent = result.examTitle;
       document.getElementById('result-score').textContent = result.percentage + '%';
       document.getElementById('result-marks').textContent = `${result.score} / ${result.totalMarks}`;
