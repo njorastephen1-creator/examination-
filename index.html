@@ -35,9 +35,8 @@
     .btn-secondary:hover { background: #667eea; color: white; transform: translateY(-2px); }
     .btn-success { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 12px 28px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(67, 233, 123, 0.4); }
     .btn-success:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(67, 233, 123, 0.5); }
-    .btn-whatsapp { background: linear-gradient(135deg, #25d366 0%, #128c7e 100%); color: white; padding: 12px 28px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4); }
-    .btn-whatsapp:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37, 211, 102, 0.5); }
     .btn-danger { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; padding: 8px 16px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(250, 112, 154, 0.4); }
     .btn-sm { padding: 8px 16px; font-size: 13px; }
     .question-card { background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 16px; border: 2px solid #e2e8f0; }
     .question-card h4 { color: #4a5568; margin-bottom: 12px; }
@@ -99,10 +98,10 @@
       <nav class="nav">
         <button class="nav-btn active" id="btn-exams" onclick="showView('exams')">📚 My Exams</button>
         <button class="nav-btn" id="btn-register" onclick="showView('register')">📝 Register</button>
-        <button class="nav-btn" id="btn-students" onclick="showView('students')" disabled>👥 Students</button>
-        <button class="nav-btn" id="btn-testimonies" onclick="showView('testimonies')">💬 Testimonies</button>
-        <button class="nav-btn" id="btn-create" onclick="showView('create')" disabled>➕ Create</button>
-        <button class="nav-btn" id="btn-teachers" onclick="showView('teachers')" disabled>👨‍🏫 Teachers</button>
+        <button class="nav-btn" id="btn-students" onclick="showView('students')" style="display:none;">👥 Students</button>
+        <button class="nav-btn" id="btn-testimonies" onclick="showView('testimonies')" style="display:none;">💬 Testimonies</button>
+        <button class="nav-btn" id="btn-create" onclick="showView('create')" style="display:none;">➕ Create</button>
+        <button class="nav-btn" id="btn-teachers" onclick="showView('teachers')" style="display:none;">👨‍🏫 Teachers</button>
       </nav>
       <div class="user-controls">
         <span id="user-display">🔐 Guest</span>
@@ -181,6 +180,7 @@
                   <th>Score</th>
                   <th>Percentage</th>
                   <th>Date</th>
+                  <th style="width:80px;">Delete</th>
                 </tr>
               </thead>
               <tbody id="students-table-body"></tbody>
@@ -257,11 +257,8 @@
               <p>After publishing, share this unique link with students:</p>
               <div class="share-link" id="exam-share-link" style="display:none;"></div>
               <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:12px;">
-                <button type="button" class="btn-whatsapp" onclick="shareExamWhatsAppDirect()" style="display:none;" id="btn-share-whatsapp">
-                  <i class="fab fa-whatsapp"></i> Share on WhatsApp
-                </button>
-                <button type="button" class="btn-secondary" onclick="copyExamLink()" style="display:none;" id="btn-copy-link">
-                  <i class="fas fa-copy"></i> Copy Link
+                <button type="button" class="btn-success" onclick="copyAndShare()" style="display:none;" id="btn-copy-share">
+                  <i class="fas fa-copy"></i> Copy Link & Open WhatsApp
                 </button>
               </div>
               <p style="font-size:13px;margin-top:12px;opacity:0.9;">⚠️ Only students who register via this link can access this exam.</p>
@@ -307,7 +304,7 @@
       databaseURL: "https://discipleship-dashboard-4d713-default-rtdb.europe-west1.firebasedatabase.app",
       projectId: "discipleship-dashboard-4d713",
       storageBucket: "discipleship-dashboard-4d713.firebasestorage.app",
-    messagingSenderId: "27738663604",
+      messagingSenderId: "27738663604",
       appId: "1:27738663604:web:bf1898247e0dd5a37805e1"
     };
 
@@ -321,7 +318,7 @@
       isTeacher: false,
       exams: {},
       results: {},
-      students: {},
+            students: {},
       testimonies: {},
       teachers: {},
       currentExam: null,
@@ -369,6 +366,7 @@
       }
     });
 
+    // ✅ FIXED: Role checking with proper UI control
     function checkUserRole() {
       return Promise.all([
         database.ref('authorized_users/' + app.currentUser.uid).once('value').then(snapshot => {
@@ -377,6 +375,7 @@
             app.isAdmin = userData.role === 'Admin';
             app.isTeacher = userData.role === 'Teacher' || userData.role === 'Admin';
           } else {
+            // First user becomes admin automatically
             app.isAdmin = true;
             app.isTeacher = true;
             database.ref('authorized_users/' + app.currentUser.uid).set({
@@ -394,14 +393,22 @@
           }
         })
       ]).then(() => {
-        if (app.isAdmin || app.isTeacher) {
-          document.getElementById('btn-students').disabled = false;
-          document.getElementById('btn-create').disabled = false;
-          if (app.isAdmin) {
-            document.getElementById('btn-teachers').disabled = false;
-          }
-          console.log('✅ Access granted - Admin:', app.isAdmin, 'Teacher:', app.isTeacher);
-        }
+        const isStaff = app.isAdmin || app.isTeacher;
+        
+        // Show/hide navigation based on role
+        document.getElementById('btn-exams').style.display = 'inline-block';
+        document.getElementById('btn-register').style.display = 'inline-block';
+        document.getElementById('btn-students').style.display = isStaff ? 'inline-block' : 'none';
+        document.getElementById('btn-testimonies').style.display = isStaff ? 'inline-block' : 'none';
+        document.getElementById('btn-create').style.display = isStaff ? 'inline-block' : 'none';
+        document.getElementById('btn-teachers').style.display = app.isAdmin ? 'inline-block' : 'none';
+        
+        // Enable/disable buttons
+        document.getElementById('btn-students').disabled = !isStaff;
+        document.getElementById('btn-create').disabled = !isStaff;
+        document.getElementById('btn-teachers').disabled = !app.isAdmin;
+        
+        console.log('✅ Access set - Admin:', app.isAdmin, 'Teacher:', app.isTeacher);
       });
     }
 
@@ -432,41 +439,69 @@
       }
     };
 
+    // ✅ FIXED: Block students from staff-only views
     window.showView = function(viewName) {
-      if (viewName === 'create' && !app.isTeacher && !app.isAdmin) {
-        alert('🔐 Teachers and Admin only');
-        return;
+      const isStaff = app.isAdmin || app.isTeacher;
+      
+      // Block students from accessing staff-only views
+      if (!isStaff) {
+        if (viewName === 'create' || viewName === 'students' || viewName === 'teachers') {
+          alert('🔐 This section is for teachers and admin only');
+          showView('exams');
+          return;
+        }
+        if (viewName === 'testimonies') {
+          alert('📝 You can write a testimony after completing an exam');
+          showView('exams');
+          return;
+        }
       }
-      if (viewName === 'students' && !app.isTeacher && !app.isAdmin) {
-        alert('🔐 Teachers and Admin only');
-        return;
-      }
+      
+      // Block non-admin from teachers management
       if (viewName === 'teachers' && !app.isAdmin) {
         alert('🔐 Admin only');
+        showView('exams');
         return;
       }
       
+      // Switch view
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
       document.getElementById(viewName).classList.add('active');
+      
       const btnId = 'btn-' + viewName;
       const btn = document.getElementById(btnId);
       if (btn) btn.classList.add('active');
       
+      // Load data for view
       if (viewName === 'exams') {
         renderExams();
         const notice = document.getElementById('student-exam-notice');
         if (notice) {
-          notice.style.display = (!app.isTeacher && !app.isAdmin) ? 'block' : 'none';
+          notice.style.display = !isStaff ? 'block' : 'none';
         }
       }
       if (viewName === 'students') {
-        app.currentPage = 1;
-        renderStudents();
+        if (isStaff) {
+          app.currentPage = 1;
+          renderStudents();
+        }
       }
-      if (viewName === 'testimonies') renderTestimonies();
-      if (viewName === 'teachers') renderTeachers();
-      if (viewName === 'create') addQuestion();
+      if (viewName === 'testimonies') {
+        if (isStaff) {
+          renderTestimonies();
+        }
+      }
+      if (viewName === 'teachers') {
+        if (app.isAdmin) {
+          renderTeachers();
+        }
+      }
+      if (viewName === 'create') {
+        if (isStaff) {
+          addQuestion();
+        }
+      }
     };
 
     function loadExamForRegistration() {
@@ -588,7 +623,8 @@
         });
       }
     }
-        window.addQuestion = function() {
+
+    window.addQuestion = function() {
       app.questionCount++;
       const container = document.getElementById('questions-container');
       const questionDiv = document.createElement('div');
@@ -685,18 +721,17 @@
       const examId = exam.accessCode;
       database.ref('exams/' + examId).set(exam)
         .then(() => {
-          // Generate clean, full URL with https
-          const baseUrl = window.location.origin + window.location.pathname;
-          const shareLink = `${baseUrl}?exam=${examId}`;
+          // Generate share link
+          const baseUrl = window.location.href.split('?')[0];
+          const examLink = `${baseUrl}?exam=${examId}`;
           
-          document.getElementById('exam-share-link').textContent = shareLink;
+          document.getElementById('exam-share-link').textContent = examLink;
           document.getElementById('exam-share-link').style.display = 'block';
-          document.getElementById('btn-share-whatsapp').style.display = 'inline-block';
-          document.getElementById('btn-copy-link').style.display = 'inline-block';
-          document.getElementById('btn-share-whatsapp').dataset.link = shareLink;
-          document.getElementById('btn-share-whatsapp').dataset.title = title;
+          document.getElementById('btn-copy-share').style.display = 'inline-block';
+          document.getElementById('btn-copy-share').dataset.link = examLink;
+          document.getElementById('btn-copy-share').dataset.title = title;
           
-          alert('✅ Exam published! Link is ready to share.');
+          alert('✅ Exam published! Click "Copy Link & Open WhatsApp" to share.');
           document.getElementById('create-exam-form').reset();
           document.getElementById('questions-container').innerHTML = '';
           app.questionCount = 0;
@@ -705,87 +740,41 @@
         .catch(err => alert('❌ Error: ' + err.message));
     };
 
-    // ✅ TESTED & WORKING: WhatsApp Share Function
-    window.shareExamWhatsAppDirect = function() {
-      const btn = document.getElementById('btn-share-whatsapp');
-      let link = btn.dataset.link;
+    // ✅ Copy Link & Open WhatsApp
+    window.copyAndShare = function() {
+      const btn = document.getElementById('btn-copy-share');
+      const link = btn.dataset.link;
       const title = btn.dataset.title;
       
-      // Ensure link has https://
-      if (!link.startsWith('http://') && !link.startsWith('https://')) {
-        link = 'https://' + link;
-      }
-      
-      // Create clean message
-      const message = `📝 *${title}*\n\n🔗 ${link}\n\nClick to register and take the exam!`;
-      
-      // Copy to clipboard first (backup)
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(link).then(() => {
-          console.log('✅ Link copied to clipboard');
-        }).catch(err => console.log('⚠️ Clipboard failed:', err));
-      }
-      
-      // Use WhatsApp API
-      const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-      
-      // Open WhatsApp
-      const newWindow = window.open(whatsappUrl, '_blank');
-      
-      // Fallback if popup blocked
-      if (!newWindow || newWindow.closed) {
-        prompt('WhatsApp did not open. Copy this link and paste it in WhatsApp manually:', link);
-      }
+      navigator.clipboard.writeText(link).then(() => {
+        alert('✅ Link copied!\n\n1. WhatsApp will open now\n2. Select contact/group\n3. Paste the link (long press → Paste)\n4. Send!');
+        setTimeout(() => {
+          window.open('https://wa.me/', '_blank');
+        }, 1500);
+      }).catch(() => {
+        prompt('Copy this link:', link);
+      });
     };
-
-    // Copy Link Function
-    window.copyExamLink = function() {
-      const link = document.getElementById('exam-share-link').textContent;
-      
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(link).then(() => {
-          alert('✅ Link copied to clipboard!\n\nYou can now paste it in WhatsApp or anywhere else.');
-        }).catch(() => {
-          prompt('Copy this link:', link);
-        });
-      } else {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = link;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-9999px';
-        document.body.appendChild(textArea);
-        textArea.select();
-        
-        try {
-          document.execCommand('copy');
-          alert('✅ Link copied to clipboard!');
-        } catch (err) {
-          prompt('Copy this link:', link);
-        }
-        
-        document.body.removeChild(textArea);
-      }
-    };
-
-    window.renderExams = function() {
+        window.renderExams = function() {
       const list = document.getElementById('exam-list');
       if (!list) return;
       
+      const isStaff = app.isAdmin || app.isTeacher;
       const searchTerm = (document.getElementById('search-exam').value || '').toLowerCase();
       const filter = document.getElementById('filter-exam').value;
       
       let filtered = Object.entries(app.exams);
       
-      // Students only see their assigned exam
-      if (!app.isTeacher && !app.isAdmin && app.registeredStudent && app.registeredStudent.assignedExamId) {
+      // STUDENTS: Only see their assigned exam
+      if (!isStaff && app.registeredStudent && app.registeredStudent.assignedExamId) {
         filtered = filtered.filter(([id, exam]) => id === app.registeredStudent.assignedExamId);
-      } else if (!app.isTeacher && !app.isAdmin) {
-        // Unregistered students see nothing
+      } 
+      // Unregistered students see nothing
+      else if (!isStaff) {
         filtered = [];
       }
       
-      // Apply filters
+      // Apply search/filter
       filtered = filtered.filter(([id, exam]) => {
         const matchesSearch = !searchTerm || exam.title.toLowerCase().includes(searchTerm) || exam.subject.toLowerCase().includes(searchTerm);
         const matchesFilter = !filter || (filter === 'active' && exam.status === 'active') || (filter === 'completed' && exam.status === 'closed');
@@ -794,7 +783,7 @@
       
       if (filtered.length === 0) {
         list.innerHTML = '<p style="text-align:center;color:#718096;padding:40px;">' + 
-          (app.isTeacher || app.isAdmin ? 'No exams yet. Create one!' : 'No exams assigned to you. Wait for your teacher to share a link.') + 
+          (isStaff ? 'No exams yet. Create one!' : 'No exams assigned to you. Wait for your teacher to share a link.') + 
           '</p>';
         return;
       }
@@ -815,11 +804,46 @@
             <p><strong>Questions:</strong> ${exam.questions.length}</p>
             <span class="badge ${exam.status === 'active' ? 'badge-active' : 'badge-closed'}">${exam.status.toUpperCase()}</span>
             ${isCompleted ? '<span class="badge badge-assigned">✅ Completed</span>' : ''}
+            ${isStaff ? `<button class="btn-danger btn-sm" onclick="deleteExam('${id}')" style="margin-top:12px;">🗑️ Delete Exam</button>` : ''}
             ${exam.status === 'active' && !isCompleted ? `<button class="btn-primary btn-sm" onclick="takeExam('${id}')" style="margin-top:12px;width:100%;">📝 Take Exam</button>` : ''}
             ${isCompleted ? `<button class="btn-secondary btn-sm" onclick="viewMyResult('${id}')" style="margin-top:12px;width:100%;">📊 View Result</button>` : ''}
           </div>
         `;
       }).join('');
+    };
+
+    // ✅ Delete Exam (Staff Only)
+    window.deleteExam = function(examId) {
+      if (!app.isAdmin && !app.isTeacher) {
+        alert('🔐 Teachers and Admin only');
+        return;
+      }
+      
+      if (!confirm('⚠️ Delete this exam?\n\nThis will also delete all student results for this exam.\n\nThis action cannot be undone!')) {
+        return;
+      }
+      
+      // Delete exam
+      database.ref('exams/' + examId).remove()
+        .then(() => {
+          // Delete all results for this exam
+          const resultsToDelete = Object.entries(app.results)
+            .filter(([id, result]) => result.examId === examId)
+            .map(([id]) => 'results/' + id);
+          
+          if (resultsToDelete.length > 0) {
+            const updates = {};
+            resultsToDelete.forEach(path => updates[path] = null);
+            return database.ref().update(updates);
+          }
+        })
+        .then(() => {
+          alert('✅ Exam and all results deleted successfully!');
+          renderExams();
+        })
+        .catch(err => {
+          alert('❌ Error deleting exam: ' + err.message);
+        });
     };
 
     window.takeExam = function(examId) {
@@ -955,10 +979,18 @@
       document.getElementById('result-date').textContent = '📅 ' + new Date(result.submittedAt).toLocaleString();
       showView('exam-result');
     };
-        // Render Students with Pagination & Ranking
+        // Render Students with Pagination, Ranking & Delete
     window.renderStudents = function() {
       const tbody = document.getElementById('students-table-body');
       if (!tbody) return;
+      
+      const isStaff = app.isAdmin || app.isTeacher;
+      
+      // Block students from viewing this
+      if (!isStaff) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#ef476f;padding:40px;">🔐 Teachers and Admin only</td></tr>';
+        return;
+      }
       
       const searchTerm = (document.getElementById('search-student').value || '').toLowerCase();
       const classFilter = document.getElementById('filter-class').value;
@@ -999,7 +1031,7 @@
       const pageData = sorted.slice(start, end);
       
       if (pageData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#718096;padding:40px;">No students found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#718096;padding:40px;">No students found</td></tr>';
         renderPagination(0);
         return;
       }
@@ -1021,11 +1053,42 @@
             <td>${r.score} / ${r.totalMarks}</td>
             <td><strong style="color:#667eea;font-size:16px;">${r.percentage}%</strong></td>
             <td>${new Date(r.submittedAt).toLocaleDateString()}</td>
+            <td><button class="btn-danger btn-sm" onclick="deleteResult('${r.examId}', '${r.studentEmail}', '${new Date(r.submittedAt).toISOString()}')"><i class="fas fa-trash"></i></button></td>
           </tr>
         `;
       }).join('');
       
       renderPagination(totalPages);
+    };
+
+    // ✅ Delete Single Result (Staff Only)
+    window.deleteResult = function(examId, studentEmail, submittedAt) {
+      if (!app.isAdmin && !app.isTeacher) {
+        alert('🔐 Teachers and Admin only');
+        return;
+      }
+      
+      if (!confirm('⚠️ Delete this student\'s result?\n\nThis action cannot be undone!')) {
+        return;
+      }
+      
+      // Find and delete the specific result
+      const resultToDelete = Object.entries(app.results).find(([id, r]) => 
+        r.examId === examId && 
+        r.studentEmail === studentEmail && 
+        new Date(r.submittedAt).toISOString() === submittedAt
+      );
+      
+      if (resultToDelete) {
+        database.ref('results/' + resultToDelete[0]).remove()
+          .then(() => {
+            alert('✅ Result deleted successfully!');
+            renderStudents();
+          })
+          .catch(err => {
+            alert('❌ Error deleting result: ' + err.message);
+          });
+      }
     };
 
     // Pagination Controls
@@ -1054,6 +1117,11 @@
 
     // Export Students to CSV
     window.exportStudents = function() {
+      if (!app.isAdmin && !app.isTeacher) {
+        alert('🔐 Teachers and Admin only');
+        return;
+      }
+      
       let csv = 'Rank,Name,Phone,Class,Exam,Score,Total,Percentage,Date\n';
       const sorted = Object.values(app.results).sort((a, b) => b.percentage - a.percentage);
       sorted.forEach((r, i) => {
@@ -1068,10 +1136,18 @@
       alert('✅ Exported!');
     };
 
-    // Render Testimonies
+    // Render Testimonies (Staff Only - Students can't see all)
     window.renderTestimonies = function() {
       const list = document.getElementById('testimonies-list');
       if (!list) return;
+      
+      const isStaff = app.isAdmin || app.isTeacher;
+      
+      // Students can't view the testimonies list
+      if (!isStaff) {
+        list.innerHTML = '<p style="text-align:center;color:#718096;padding:40px;">💬 You can write a testimony after completing an exam</p>';
+        return;
+      }
       
       const searchTerm = (document.getElementById('search-testimony').value || '').toLowerCase();
       
