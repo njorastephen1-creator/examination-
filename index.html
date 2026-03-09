@@ -105,14 +105,19 @@
       </nav>
       <div class="user-controls">
         <span id="user-display">🔐 Guest</span>
-        <button id="auth-btn" class="btn-secondary" style="padding:8px 16px;" onclick="toggleAuth()">Login</button>
+        <button id="student-login-btn" class="btn-success" style="padding:8px 16px;" onclick="studentLogin()">👤 Student</button>
+        <button id="teacher-login-btn" class="btn-primary" style="padding:8px 16px;" onclick="teacherLogin()">👨‍🏫 Teacher</button>
       </div>
     </header>
 
     <main class="content">
       <div id="auth-warning" class="auth-warning" style="display:none;">
         <h3>🔐 Login Required</h3>
-        <p>Please login or register to access exams</p>
+        <p>Please login to access exams</p>
+        <div style="margin-top:16px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+          <button class="btn-success" onclick="studentLogin()">👤 Student Login (Quick)</button>
+          <button class="btn-primary" onclick="teacherLogin()">👨‍🏫 Teacher Login</button>
+        </div>
       </div>
 
       <section id="exams" class="view">
@@ -302,6 +307,7 @@
       apiKey: "AIzaSyCdSvUk6qpC857ZJfaDbniDlOKvWXPYYXY",
       authDomain: "discipleship-dashboard-4d713.firebaseapp.com",
       databaseURL: "https://discipleship-dashboard-4d713-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "discipleship-dashboard-4d      databaseURL: "https://discipleship-dashboard-4d713-default-rtdb.europe-west1.firebasedatabase.app",
       projectId: "discipleship-dashboard-4d713",
       storageBucket: "discipleship-dashboard-4d713.firebasestorage.app",
       messagingSenderId: "27738663604",
@@ -318,7 +324,7 @@
       isTeacher: false,
       exams: {},
       results: {},
-            students: {},
+      students: {},
       testimonies: {},
       teachers: {},
       currentExam: null,
@@ -338,14 +344,45 @@
       app.assignedExamId = examIdFromUrl;
     }
 
-    // Authentication
+    // ✅ Authentication State Listener
     auth.onAuthStateChanged(function(user) {
       app.currentUser = user;
+      
       if (user) {
-        document.getElementById('user-display').textContent = '👤 ' + (user.email || 'User');
-        document.getElementById('auth-btn').textContent = 'Logout';
+        // User is logged in (either anonymous or email/password)
+        if (user.isAnonymous) {
+          document.getElementById('user-display').textContent = '👤 Student';
+        } else {
+          document.getElementById('user-display').textContent = '👤 ' + (user.email || 'User');
+        }
+        
+        // Hide login buttons, show logout
+        document.getElementById('student-login-btn').style.display = 'none';
+        document.getElementById('teacher-login-btn').style.display = 'none';
+        
+        // Add logout button
+        const logoutBtn = document.createElement('button');
+        logoutBtn.id = 'logout-btn';
+        logoutBtn.className = 'btn-danger';
+        logoutBtn.style.padding = '8px 16px';
+        logoutBtn.textContent = '🚪 Logout';
+        logoutBtn.onclick = function() {
+          auth.signOut().then(() => {
+            alert('✅ Logged out');
+            app.isAdmin = false;
+            app.isTeacher = false;
+            location.reload();
+          });
+        };
+        
+        const userControls = document.querySelector('.user-controls');
+        if (!document.getElementById('logout-btn')) {
+          userControls.appendChild(logoutBtn);
+        }
+        
         document.getElementById('auth-warning').style.display = 'none';
         
+        // Check role and load data
         checkUserRole().then(() => {
           loadAllData();
           if (app.assignedExamId && !app.registeredStudent) {
@@ -354,39 +391,93 @@
           }
         });
       } else {
+        // User is logged out
         document.getElementById('user-display').textContent = '🔐 Guest';
-        document.getElementById('auth-btn').textContent = 'Login';
-        document.getElementById('auth-warning').style.display = 'block';
-        document.querySelectorAll('.nav-btn').forEach(btn => btn.disabled = true);
+        document.getElementById('student-login-btn').style.display = 'inline-block';
+        document.getElementById('teacher-login-btn').style.display = 'inline-block';
         
-        if (app.assignedExamId) {
-          document.getElementById('auth-warning').innerHTML = '<h3>📝 Exam Access</h3><p>Login or register to take this exam</p>';
-          loadExamForRegistration();
-        }
+        // Remove logout button if exists
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) logoutBtn.remove();
+        
+        document.getElementById('auth-warning').style.display = 'block';
+        
+        // Reset app state
+        app.isAdmin = false;
+        app.isTeacher = false;
+        app.exams = {};
+        app.results = {};
+        app.students = {};
+        app.testimonies = {};
+        app.teachers = {};
       }
     });
 
-    // ✅ FIXED: Role checking with proper UI control
+    // ✅ Student Login (Anonymous - One Click)
+    window.studentLogin = function() {
+      auth.signInAnonymously()
+        .then(() => {
+          console.log('✅ Anonymous login successful');
+          // If came from exam link, go to register
+          if (app.assignedExamId) {
+            showView('register');
+          } else {
+            showView('exams');
+          }
+        })
+        .catch((error) => {
+          console.error('❌ Anonymous login error:', error);
+          alert('❌ Error: ' + error.message);
+        });
+    };
+
+    // ✅ Teacher Login (Email/Password)
+    window.teacherLogin = function() {
+      const email = prompt('Teacher Email:');
+      if (!email) return;
+      
+      const password = prompt('Password:');
+      if (!password) return;
+      
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          alert('✅ Teacher login successful!');
+          return checkUserRole();
+        })
+        .then(() => {
+          if (app.assignedExamId && !app.registeredStudent) {
+            showView('register');
+          }
+        })
+        .catch(err => {
+          alert('❌ Teacher login failed: ' + err.message);
+        });
+    };
+
+    // ✅ Role Checking with UI Updates
     function checkUserRole() {
       return Promise.all([
+        // Check admin/teacher status in authorized_users
         database.ref('authorized_users/' + app.currentUser.uid).once('value').then(snapshot => {
           const userData = snapshot.val();
           if (userData) {
             app.isAdmin = userData.role === 'Admin';
             app.isTeacher = userData.role === 'Teacher' || userData.role === 'Admin';
-          } else {
-            // First user becomes admin automatically
+          } else if (!app.currentUser.isAnonymous) {
+            // First non-anonymous user becomes admin automatically
             app.isAdmin = true;
             app.isTeacher = true;
             database.ref('authorized_users/' + app.currentUser.uid).set({
               email: app.currentUser.email,
-              name: app.currentUser.email.split('@')[0],
+              name: app.currentUser.email ? app.currentUser.email.split('@')[0] : 'Admin',
               role: 'Admin',
               status: 'approved',
               createdAt: Date.now()
             }).catch(err => console.error('Error saving admin:', err));
           }
         }),
+        
+        // Check if user is in teachers list
         database.ref('teachers').orderByChild('email').equalTo(app.currentUser.email).once('value').then(snapshot => {
           if (snapshot.exists()) {
             app.isTeacher = true;
@@ -408,38 +499,11 @@
         document.getElementById('btn-create').disabled = !isStaff;
         document.getElementById('btn-teachers').disabled = !app.isAdmin;
         
-        console.log('✅ Access set - Admin:', app.isAdmin, 'Teacher:', app.isTeacher);
+        console.log('✅ Access set - Admin:', app.isAdmin, 'Teacher:', app.isTeacher, 'Anonymous:', app.currentUser?.isAnonymous);
       });
     }
 
-    window.toggleAuth = function() {
-      if (app.currentUser) {
-        auth.signOut().then(() => {
-          alert('✅ Logged out');
-          app.isAdmin = false;
-          app.isTeacher = false;
-          showView('exams');
-        });
-      } else {
-        const email = prompt('Email:');
-        if (email) {
-          const password = prompt('Password:');
-          auth.signInWithEmailAndPassword(email, password)
-            .then(() => {
-              alert('✅ Login successful!');
-              return checkUserRole();
-            })
-            .then(() => {
-              if (app.assignedExamId && !app.registeredStudent) {
-                showView('register');
-              }
-            })
-            .catch(err => alert('❌ ' + err.message));
-        }
-      }
-    };
-
-    // ✅ FIXED: Block students from staff-only views
+    // ✅ View Switching with Access Control
     window.showView = function(viewName) {
       const isStaff = app.isAdmin || app.isTeacher;
       
@@ -521,7 +585,10 @@
 
     window.registerStudent = function(e) {
       e.preventDefault();
-      if (!app.currentUser) { alert('🔐 Please login first'); return; }
+      if (!app.currentUser) { 
+        alert('🔐 Please login first'); 
+        return; 
+      }
       
       const name = document.getElementById('reg-name').value.trim();
       const phone = document.getElementById('reg-phone').value.trim();
@@ -531,7 +598,9 @@
         name,
         phone,
         class: classNum,
-        email: app.currentUser.email,
+        email: app.currentUser.email || null, // Anonymous users have null email
+        userId: app.currentUser.uid,
+        isAnonymous: app.currentUser.isAnonymous,
         registeredAt: Date.now(),
         assignedExamId: app.assignedExamId
       };
@@ -712,7 +781,7 @@
         totalMarks,
         instructions,
         questions,
-        createdBy: app.currentUser.email,
+        createdBy: app.currentUser.email || 'Anonymous Teacher',
         createdAt: Date.now(),
         status: 'active',
         accessCode: 'exam_' + Date.now()
@@ -752,10 +821,11 @@
           window.open('https://wa.me/', '_blank');
         }, 1500);
       }).catch(() => {
-        prompt('Copy this link:', link);
+                prompt('Copy this link:', link);
       });
     };
-        window.renderExams = function() {
+
+    window.renderExams = function() {
       const list = document.getElementById('exam-list');
       if (!list) return;
       
@@ -790,7 +860,7 @@
       
       // Check if student already completed exam
       const completedExams = Object.values(app.results)
-        .filter(r => r.studentEmail === app.currentUser.email)
+        .filter(r => r.studentEmail === app.currentUser.email || r.userId === app.currentUser.uid)
         .map(r => r.examId);
       
       list.innerHTML = filtered.map(([id, exam]) => {
@@ -928,7 +998,9 @@
       const result = {
         examId: app.currentExam.id,
         examTitle: app.currentExam.title,
-        studentEmail: app.currentUser.email,
+        studentEmail: app.currentUser.email || null,
+        userId: app.currentUser.uid,
+        isAnonymous: app.currentUser.isAnonymous,
         studentName: app.registeredStudent.name,
         studentPhone: app.registeredStudent.phone,
         studentClass: app.registeredStudent.class,
@@ -947,7 +1019,8 @@
             const testimonyData = {
               examId: app.currentExam.id,
               examTitle: app.currentExam.title,
-              studentEmail: app.currentUser.email,
+              studentEmail: app.currentUser.email || null,
+              userId: app.currentUser.uid,
               studentName: app.registeredStudent.name,
               studentClass: app.registeredStudent.class,
               testimony,
@@ -970,7 +1043,10 @@
     };
 
     window.viewMyResult = function(examId) {
-      const result = Object.values(app.results).find(r => r.examId === examId && r.studentEmail === app.currentUser.email);
+      const result = Object.values(app.results).find(r => 
+        r.examId === examId && 
+        (r.studentEmail === app.currentUser.email || r.userId === app.currentUser.uid)
+      );
       if (!result) return;
       
       document.getElementById('result-exam-title').textContent = result.examTitle;
@@ -1053,7 +1129,7 @@
             <td>${r.score} / ${r.totalMarks}</td>
             <td><strong style="color:#667eea;font-size:16px;">${r.percentage}%</strong></td>
             <td>${new Date(r.submittedAt).toLocaleDateString()}</td>
-            <td><button class="btn-danger btn-sm" onclick="deleteResult('${r.examId}', '${r.studentEmail}', '${new Date(r.submittedAt).toISOString()}')"><i class="fas fa-trash"></i></button></td>
+            <td><button class="btn-danger btn-sm" onclick="deleteResult('${r.examId}', '${r.userId || r.studentEmail}', '${new Date(r.submittedAt).toISOString()}')"><i class="fas fa-trash"></i></button></td>
           </tr>
         `;
       }).join('');
@@ -1062,7 +1138,7 @@
     };
 
     // ✅ Delete Single Result (Staff Only)
-    window.deleteResult = function(examId, studentEmail, submittedAt) {
+    window.deleteResult = function(examId, studentId, submittedAt) {
       if (!app.isAdmin && !app.isTeacher) {
         alert('🔐 Teachers and Admin only');
         return;
@@ -1075,7 +1151,7 @@
       // Find and delete the specific result
       const resultToDelete = Object.entries(app.results).find(([id, r]) => 
         r.examId === examId && 
-        r.studentEmail === studentEmail && 
+        (r.userId === studentId || r.studentEmail === studentId) && 
         new Date(r.submittedAt).toISOString() === submittedAt
       );
       
@@ -1185,7 +1261,7 @@
         loadExamForRegistration();
         if (!app.currentUser) {
           document.getElementById('auth-warning').style.display = 'block';
-          document.getElementById('auth-warning').innerHTML = '<h3>📝 Exam Access</h3><p>Login or register to take this exam</p>';
+          document.getElementById('auth-warning').innerHTML = '<h3>📝 Exam Access</h3><p>Login to take this exam</p><div style="margin-top:16px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;"><button class="btn-success" onclick="studentLogin()">👤 Student Login (Quick)</button><button class="btn-primary" onclick="teacherLogin()">👨‍🏫 Teacher Login</button></div>';
         }
       }
     });
