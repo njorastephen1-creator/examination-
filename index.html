@@ -454,17 +454,15 @@
         });
     };
 
-    // ✅ Role Checking with UI Updates
+        // ✅ Role Checking with UI Updates - CORRECTED
     function checkUserRole() {
       return Promise.all([
-        // Check admin/teacher status in authorized_users
         database.ref('authorized_users/' + app.currentUser.uid).once('value').then(snapshot => {
           const userData = snapshot.val();
           if (userData) {
             app.isAdmin = userData.role === 'Admin';
             app.isTeacher = userData.role === 'Teacher' || userData.role === 'Admin';
           } else if (!app.currentUser.isAnonymous) {
-            // First non-anonymous user becomes admin automatically
             app.isAdmin = true;
             app.isTeacher = true;
             database.ref('authorized_users/' + app.currentUser.uid).set({
@@ -476,6 +474,37 @@
             }).catch(err => console.error('Error saving admin:', err));
           }
         }),
+        
+        database.ref('teachers').orderByChild('email').equalTo(app.currentUser.email).once('value').then(snapshot => {
+          if (snapshot.exists()) {
+            app.isTeacher = true;
+          }
+        })
+      ]).then(() => {
+        const isStaff = app.isAdmin || app.isTeacher;
+        
+        // ✅ ALWAYS ENABLE - Students NEED these to take exams
+        document.getElementById('btn-exams').disabled = false;
+        document.getElementById('btn-register').disabled = false;
+        document.getElementById('btn-exams').style.display = 'inline-block';
+        document.getElementById('btn-register').style.display = 'inline-block';
+        
+        // ✅ STAFF ONLY - Hide/disable for students
+        document.getElementById('btn-students').disabled = !isStaff;
+        document.getElementById('btn-students').style.display = isStaff ? 'inline-block' : 'none';
+        
+        document.getElementById('btn-testimonies').disabled = !isStaff;
+        document.getElementById('btn-testimonies').style.display = isStaff ? 'inline-block' : 'none';
+        
+        document.getElementById('btn-create').disabled = !isStaff;
+        document.getElementById('btn-create').style.display = isStaff ? 'inline-block' : 'none';
+        
+        document.getElementById('btn-teachers').disabled = !app.isAdmin;
+        document.getElementById('btn-teachers').style.display = app.isAdmin ? 'inline-block' : 'none';
+        
+        console.log('✅ Navigation set - Students see: Exams, Register | Staff see: All');
+      });
+    }
         
         // Check if user is in teachers list
         database.ref('teachers').orderByChild('email').equalTo(app.currentUser.email).once('value').then(snapshot => {
